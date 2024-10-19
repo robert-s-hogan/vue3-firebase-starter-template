@@ -38,3 +38,6 @@ pnpm-debug.log*
 # Optional Firebase Emulators if used
 firebase-debug.log
 .firebaserc
+
+
+.npmrc
