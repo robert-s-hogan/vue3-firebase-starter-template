@@ -1,9 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/Home/HomeView.vue'
-// import Login from '@/views/Login/LoginView.vue'
-// import Dashboard from '@/views/Dashboard/DashboardView.vue'
-// import AuthLayout from '@/layouts/AuthLayout.vue'
-// import DefaultLayout from '@/layouts/DefaultLayout.vue'
+import Login from '@/views/Login/LoginView.vue'
+import Dashboard from '@/views/Dashboard/DashboardView.vue'
+import AuthLayout from '@/layouts/auth/AuthLayout.vue'
+import DefaultLayout from '@/layouts/default/DefaultLayout.vue'
 // import { auth } from '@/firebase/firebaseConfig'
 
 const routes = [
@@ -12,11 +12,11 @@ const routes = [
     component: DefaultLayout,
     children: [{ path: '', component: HomeView }],
   },
-  // {
-  //   path: '/login',
-  //   component: DefaultLayout,
-  //   children: [{ path: '', component: Login }],
-  // },
+  {
+    path: '/login',
+    component: DefaultLayout,
+    children: [{ path: '', component: Login }],
+  },
 
   // {
   //   path: '/register',
@@ -38,12 +38,12 @@ const routes = [
   //     },
   //   ],
   // },
-  // {
-  //   path: '/dashboard',
-  //   component: AuthLayout,
-  //   meta: { requiresAuth: true },
-  //   children: [{ path: '', component: Dashboard }],
-  // },
+  {
+    path: '/dashboard',
+    component: AuthLayout,
+    meta: { requiresAuth: true },
+    children: [{ path: '', component: Dashboard }],
+  },
 ]
 
 const router = createRouter({
