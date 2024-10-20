@@ -20,8 +20,8 @@
 <script setup>
 import { ref } from 'vue'
 import BaseButton from '@/components/atoms/BaseButton/BaseButton.vue'
-import BaseNavigation from '@/components/molecules/BaseNavigation/BaseNavigation.vue'
-import AuthButton from '@/components/molecules/AuthButton/AuthButton.vue'
+import BaseNavigation from '@/components/Molecules/BaseNavigation/BaseNavigation.vue'
+import AuthButton from '@/components/Molecules/AuthButton/AuthButton.vue'
 import BaseLink from '@/components/atoms/BaseLink/BaseLink.vue'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { auth } from '@/firebase/firebaseConfig'

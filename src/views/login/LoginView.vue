@@ -75,7 +75,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { auth } from '@/firebase/firebaseConfig'
 import { login, loginWithGoogle } from '@/services/authServices'
-import Button from '@/components/atoms/BaseButton/BaseButton.vue'
+import Button from '@/components/Atoms/BaseButton/BaseButton.vue'
 
 const router = useRouter()
 const username = ref('')
