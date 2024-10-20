@@ -2,15 +2,19 @@
   <header class="bg-white p-4 flex justify-between items-center text-white">
     <div class="flex items-center space-x-4">
       <BaseLink to="/" class="text-lg font-bold"> Home </BaseLink>
-      <BaseNavigation :isAuthenticated="isAuthenticated" />
+      <BaseNavigation :isAuthenticated="computedIsAuthenticated" />
     </div>
     <!-- Show Login Button if not authenticated -->
-    <BaseButton variant="primary" @click="handleLogin" v-if="!isAuthenticated">
+    <BaseButton
+      variant="primary"
+      @click="handleLogin"
+      v-if="!computedIsAuthenticated"
+    >
       Login
     </BaseButton>
     <!-- Show AuthButton component with logout option if authenticated -->
     <AuthButton
-      :isAuthenticated="isAuthenticated"
+      :isAuthenticated="computedIsAuthenticated"
       @logout="handleLogout"
       v-else
     />
@@ -18,7 +22,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import BaseButton from '@/components/atoms/BaseButton/BaseButton.vue'
 import BaseNavigation from '@/components/Molecules/BaseNavigation/BaseNavigation.vue'
 import AuthButton from '@/components/Molecules/AuthButton/AuthButton.vue'
@@ -29,6 +33,21 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const isAuthenticated = ref(false)
+
+// Props to control authentication state externally (e.g., for testing)
+const props = defineProps({
+  isAuthenticatedOverride: {
+    type: Boolean,
+    default: null,
+  },
+})
+
+// Computed property to decide which authentication state to use
+const computedIsAuthenticated = computed(() => {
+  return props.isAuthenticatedOverride !== null
+    ? props.isAuthenticatedOverride
+    : isAuthenticated.value
+})
 
 // Listen to auth state changes to update the isAuthenticated status
 onAuthStateChanged(auth, (user) => {

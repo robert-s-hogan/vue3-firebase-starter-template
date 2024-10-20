@@ -14,6 +14,7 @@ export default defineConfig({
     },
     specPattern: [
       'src/components/**/**/*.cy.{js,jsx,ts,tsx}',
+      'src/composables/**/**/*.cy.{js,jsx,ts,tsx}',
       'src/services/**/**/*.cy.{js,jsx,ts,tsx}',
     ],
     viewportWidth: 1280,
