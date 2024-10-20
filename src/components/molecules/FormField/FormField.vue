@@ -51,11 +51,13 @@ export default {
     },
   },
   methods: {
-    updateValue(value) {
+    updateValue(event) {
+      const value = event.target.value
       this.localValue = value
       this.$emit('update:modelValue', value)
     },
   },
+
   computed: {
     inputProps() {
       return {
