@@ -4,16 +4,19 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "clean-install": "rm -rf node_modules package-lock.json && npm install",
-    "build": "npm run lint && vite build",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "preview": "vite preview",
-    "test": "npx cypress open --component --browser edge",
-    "test:e2e": "npx cypress open --e2e --browser edge",
-    "test:run": "npx cypress run --component --browser edge",
-    "test:e2e:run": "npx cypress run --e2e --browser edge"
+    "prepare": "node check-pnpm.js",
+    "dev": "pnpm vite",
+    "clean-install": "rm -rf node_modules pnpm-lock.yaml && pnpm install",
+    "build": "pnpm run lint && pnpm vite build",
+    "lint": "pnpm eslint .",
+    "lint:fix": "pnpm eslint . --fix",
+    "preview": "pnpm vite preview",
+    "test": "pnpm cypress open --component --browser edge",
+    "test:e2e": "pnpm cypress open --e2e --browser edge",
+    "test:run": "pnpm cypress run --component --browser edge",
+    "test:e2e:run": "pnpm cypress run --e2e --browser edge",
+    "preinstall": "npx only-allow pnpm",
+    "prestart": "node check-pnpm.js"
   },
   "dependencies": {
     "firebase": "^10.14.0",
@@ -34,9 +37,13 @@
     "eslint-plugin-tailwindcss": "^3.17.5",
     "eslint-plugin-vue": "^9.29.0",
     "globals": "^15.11.0",
+    "only-allow": "^1.2.1",
     "postcss": "^8.4.47",
     "sinon": "^19.0.2",
     "tailwindcss": "^3.4.13",
     "vite": "^5.4.8"
+  },
+  "engines": {
+    "pnpm": ">=9.0.0"
   }
 }
