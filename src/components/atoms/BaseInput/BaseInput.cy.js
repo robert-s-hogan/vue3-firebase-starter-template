@@ -49,7 +49,7 @@ describe('BaseInput Component', () => {
         type: 'password',
       },
     })
-    cy.get('input').should('have.class', 'border-red-300')
-    cy.get('input').should('have.class', 'focus:ring-red-300')
+    cy.get('input').should('have.class', 'border-error-light')
+    cy.get('input').should('have.class', 'focus:ring-error-light')
   })
 })

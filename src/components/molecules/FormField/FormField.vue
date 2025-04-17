@@ -1,7 +1,7 @@
 <!-- src/components/molecules/FormField.vue -->
 <template>
   <div class="mb-4">
-    <label :for="id" class="block text-gray-700 mb-2">{{ label }}</label>
+    <label :for="id" class="block text-primary mb-2">{{ label }}</label>
     <BaseInput
       :id="id"
       v-bind="inputProps"

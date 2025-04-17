@@ -10,7 +10,7 @@ describe('BaseButton Component', () => {
       },
     })
     cy.get('[data-cy="button"]')
-      .should('have.class', 'bg-blue-500')
+      .should('have.class', 'bg-primary')
       .and('have.class', 'text-white')
   })
 
@@ -22,7 +22,7 @@ describe('BaseButton Component', () => {
       },
     })
     cy.get('[data-cy="button"]')
-      .should('have.class', 'bg-gray-500')
+      .should('have.class', 'bg-secondary')
       .and('have.class', 'text-white')
   })
 
@@ -35,7 +35,7 @@ describe('BaseButton Component', () => {
     })
     cy.get('[data-cy="button"]')
       .should('have.class', 'border')
-      .and('have.class', 'text-blue-500')
+      .and('have.class', 'text-primary')
   })
 
   it('displays spinner when loading is true', () => {

@@ -8,6 +8,8 @@
     "dev": "pnpm vite",
     "clean-install": "rm -rf node_modules pnpm-lock.yaml && pnpm install",
     "build": "pnpm run lint && pnpm vite build",
+    "create-atomic-structure": "chmod +x ./scripts/create-atomic-structure.sh",
+    "all-files": "bash ./scripts/generate-all-files.sh",
     "lint": "pnpm eslint .",
     "lint:fix": "pnpm eslint . --fix",
     "preview": "pnpm vite preview",
@@ -19,7 +21,10 @@
     "prestart": "node check-pnpm.js"
   },
   "dependencies": {
+    "clsx": "2.1.1",
     "firebase": "^10.14.0",
+    "react": "19.1.0",
+    "tailwind-merge": "3.2.0",
     "vite-plugin-eslint": "^1.8.1",
     "vue": "^3.5.10",
     "vue-router": "^4.4.5"

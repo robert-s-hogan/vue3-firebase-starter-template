@@ -13,16 +13,8 @@ const routes = [
     path: '/',
     component: DefaultLayout,
     children: [
-      {
-        path: '',
-        name: 'Home',
-        component: HomeView,
-      },
-      {
-        path: 'login',
-        name: 'Login',
-        component: Login,
-      },
+      { path: '', name: 'Home', component: HomeView },
+      { path: 'login', name: 'Login', component: Login },
       {
         path: 'register',
         name: 'Register',
@@ -40,18 +32,11 @@ const routes = [
     component: AuthLayout,
     meta: { requiresAuth: true },
     children: [
-      {
-        path: '',
-        name: 'Dashboard',
-        component: Dashboard,
-      },
+      { path: '', name: 'Dashboard', component: Dashboard },
+      // Add other authenticated routes here
     ],
   },
-  // Optional: Catch-all route for 404 Not Found
-  {
-    path: '/:pathMatch(.*)*',
-    redirect: '/',
-  },
+  { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
 const router = createRouter({
@@ -59,38 +44,83 @@ const router = createRouter({
   routes,
 })
 
-// Flag to ensure onAuthStateChanged is only set once
 let isAuthInitialized = false
+let unsubscribeAuth = null // Store the unsubscribe function
 
-// Navigation Guard
+// --- Helper function to check auth and decide navigation ---
+function checkAuthAndNavigate(to, requiresAuth, user, next) {
+  // Check if running in development mode (using Vite's boolean flag)
+  const isDevelopment = import.meta.env.DEV
+
+  if (requiresAuth && !user) {
+    // Route requires auth, but no user is logged in
+    if (isDevelopment) {
+      // --- DEVELOPMENT MODE BYPASS ---
+      console.warn(
+        `DEV MODE: Bypassing auth check for "${to.path}". User is not logged in.`
+      )
+      next() // Allow navigation anyway
+      // --- END DEVELOPMENT MODE BYPASS ---
+    } else {
+      // --- PRODUCTION MODE ENFORCEMENT ---
+      console.log(`Redirecting to Login. Route "${to.path}" requires auth.`)
+      next({ name: 'Login', query: { redirect: to.fullPath } }) // Redirect to Login
+      // --- END PRODUCTION MODE ENFORCEMENT ---
+    }
+  } else {
+    // Route doesn't require auth OR user is logged in
+    next() // Allow navigation
+  }
+}
+
+// --- Navigation Guard ---
 router.beforeEach((to, from, next) => {
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
 
   if (!isAuthInitialized) {
-    // Pause the navigation by returning a Promise
-    return new Promise((resolve) => {
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        isAuthInitialized = true
-        unsubscribe() // Stop listening after the first event
+    // First navigation, wait for Firebase auth state
+    console.log('Auth not initialized. Waiting for onAuthStateChanged...')
+    // Ensure we only attach the listener once
+    if (!unsubscribeAuth) {
+      unsubscribeAuth = onAuthStateChanged(
+        auth,
+        (user) => {
+          console.log(
+            'onAuthStateChanged fired. User:',
+            user ? user.email : 'null'
+          )
+          isAuthInitialized = true
+          // Don't unsubscribe here if you want auth state updates later,
+          // but for a basic guard, unsubscribing after first check is fine.
+          // if (unsubscribeAuth) unsubscribeAuth(); // Optional: unsubscribe after first check
 
-        if (requiresAuth && !user) {
-          // Redirect to Login page if not authenticated
-          next({ name: 'Login', query: { redirect: to.fullPath } })
-        } else {
-          next()
+          // Now that we have the user state, check auth requirements
+          checkAuthAndNavigate(to, requiresAuth, user, next)
+        },
+        (error) => {
+          // Handle potential errors during initial auth check
+          console.error('Error getting initial auth state:', error)
+          isAuthInitialized = true // Mark as initialized even on error
+          // Decide how to handle this - maybe redirect to an error page or login?
+          // For now, treat as unauthenticated:
+          checkAuthAndNavigate(to, requiresAuth, null, next)
         }
-
-        resolve()
-      })
-    })
-  } else {
-    const user = auth.currentUser
-    if (requiresAuth && !user) {
-      next({ name: 'Login', query: { redirect: to.fullPath } })
-    } else {
-      next()
+      )
     }
+    // Don't call next() here, wait for the onAuthStateChanged callback
+  } else {
+    // Auth state already initialized, check with current user
+    const user = auth.currentUser
+    console.log('Auth initialized. Current user:', user ? user.email : 'null')
+    checkAuthAndNavigate(to, requiresAuth, user, next)
   }
 })
+
+// Optional: Clean up listener when app closes (though often not strictly necessary for SPAs)
+// router.afterEach(() => {
+//   if (unsubscribeAuth && /* condition to check if app is truly closing */) {
+//      unsubscribeAuth();
+//   }
+// });
 
 export default router

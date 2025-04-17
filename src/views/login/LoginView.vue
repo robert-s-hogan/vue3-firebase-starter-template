@@ -1,20 +1,20 @@
 <template>
-  <div class="flex items-center justify-center min-h-screen bg-gray-100">
+  <div class="flex items-center justify-center min-h-screen bg-muted">
     <div class="w-full max-w-xs">
-      <h1 class="text-2xl font-bold text-center text-gray-700 mb-6">Login</h1>
+      <h1 class="text-2xl font-bold text-center text-primary mb-6">Login</h1>
       <form
         @submit.prevent="handleSubmit"
         class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
       >
         <div class="mb-4">
           <label
-            class="block text-gray-700 text-sm font-bold mb-2"
+            class="block text-primary text-sm font-bold mb-2"
             for="username"
           >
             Username
           </label>
           <input
-            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-primary leading-tight focus:outline-none focus:shadow-outline"
             id="username"
             type="text"
             v-model="username"
@@ -23,13 +23,13 @@
         </div>
         <div class="mb-6">
           <label
-            class="block text-gray-700 text-sm font-bold mb-2"
+            class="block text-primary text-sm font-bold mb-2"
             for="password"
           >
             Password
           </label>
           <input
-            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-primary mb-3 leading-tight focus:outline-none focus:shadow-outline"
             id="password"
             type="password"
             v-model="password"
@@ -46,7 +46,7 @@
         <div class="text-center mt-4">
           <router-link
             to="/reset-password"
-            class="text-blue-500 hover:underline"
+            class="text-primary hover:underline"
           >
             Forgot Password?
           </router-link>
@@ -54,7 +54,7 @@
 
         <!-- Link to Register Page -->
         <div>
-          <router-link to="/register" class="text-blue-500 hover:underline">
+          <router-link to="/register" class="text-primary hover:underline">
             Don't have an account? Register
           </router-link>
         </div>

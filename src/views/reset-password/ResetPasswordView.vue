@@ -1,7 +1,7 @@
 <template>
-  <div class="flex items-center justify-center min-h-screen bg-gray-100">
+  <div class="flex items-center justify-center min-h-screen bg-muted">
     <div class="w-full max-w-xs">
-      <h1 class="text-2xl font-bold text-center text-gray-700 mb-6">
+      <h1 class="text-2xl font-bold text-center text-primary mb-6">
         Reset Password
       </h1>
       <form
@@ -9,7 +9,7 @@
         class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
       >
         <div class="mb-4">
-          <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
+          <label class="block text-primary text-sm font-bold mb-2" for="email">
             Email
           </label>
           <input
@@ -17,7 +17,7 @@
             type="email"
             v-model="email"
             required
-            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-primary leading-tight focus:outline-none focus:shadow-outline"
           />
         </div>
         <div class="flex items-center justify-between">
@@ -28,15 +28,15 @@
       </form>
 
       <!-- Message Section -->
-      <div v-if="message" class="mt-4 text-center text-green-500">
+      <div v-if="message" class="mt-4 text-center text-success">
         {{ message }}
       </div>
-      <div v-if="error" class="mt-4 text-center text-red-500">
+      <div v-if="error" class="mt-4 text-center text-error">
         {{ error }}
       </div>
 
       <div class="text-center mt-4">
-        <router-link to="/login" class="text-blue-500 hover:underline">
+        <router-link to="/login" class="text-primary hover:underline">
           Back to Login
         </router-link>
       </div>

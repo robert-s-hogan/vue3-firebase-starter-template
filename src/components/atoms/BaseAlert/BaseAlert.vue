@@ -19,17 +19,14 @@ export default {
       return [
         'p-4 rounded mb-4',
         {
-          'bg-blue-100 text-blue-800': this.variant === 'info',
-          'bg-green-100 text-green-800': this.variant === 'success',
-          'bg-yellow-100 text-yellow-800': this.variant === 'warning',
-          'bg-red-100 text-red-800': this.variant === 'danger',
+          'bg-info-light text-info-dark': this.variant === 'info',
+          'text-info-darkabg-success-light text-success-dark':
+            this.variant === 'success',
+          'bg-warning-light text-warning-dark': this.variant === 'warning',
+          'bg-error-light text-error-dark': this.variant === 'danger',
         },
       ]
     },
   },
 }
 </script>
-
-<style scoped>
-/* Additional styles if needed */
-</style>

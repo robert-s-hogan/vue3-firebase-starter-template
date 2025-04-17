@@ -11,8 +11,8 @@ describe('BaseAlert Component', () => {
       },
     })
     cy.get('[role="alert"]')
-      .should('have.class', 'bg-blue-100')
-      .and('have.class', 'text-blue-800')
+      .should('have.class', 'bg-info-light')
+      .and('have.class', 'text-info-dark')
   })
 
   it('renders correctly with success variant', () => {
@@ -23,8 +23,8 @@ describe('BaseAlert Component', () => {
       },
     })
     cy.get('[role="alert"]')
-      .should('have.class', 'bg-green-100')
-      .and('have.class', 'text-green-800')
+      .should('have.class', 'text-info-darkabg-success-light')
+      .and('have.class', 'text-success-dark')
   })
 
   it('renders correctly with warning variant', () => {
@@ -35,8 +35,8 @@ describe('BaseAlert Component', () => {
       },
     })
     cy.get('[role="alert"]')
-      .should('have.class', 'bg-yellow-100')
-      .and('have.class', 'text-yellow-800')
+      .should('have.class', 'bg-warning-light')
+      .and('have.class', 'text-warning-dark')
   })
 
   it('renders correctly with danger variant', () => {
@@ -47,7 +47,7 @@ describe('BaseAlert Component', () => {
       },
     })
     cy.get('[role="alert"]')
-      .should('have.class', 'bg-red-100')
-      .and('have.class', 'text-red-800')
+      .should('have.class', 'bg-error-light')
+      .and('have.class', 'text-error-dark')
   })
 })

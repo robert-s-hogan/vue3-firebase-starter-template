@@ -1,0 +1,1183 @@
+═══════════════════════════════════════════════
+📄 FILE: ./eslint.config.js
+───────────────────────────────────────────────
+import globals from 'globals'
+import pluginVue from 'eslint-plugin-vue'
+import { rules as tailwindRules } from './scripts/eslint-plugin-tailwind-custom-colors.js'
+
+export default [
+  {
+    files: ['**/*.{js,mjs,cjs,vue}'],
+    languageOptions: {
+      globals: globals.browser,
+    },
+    plugins: {
+      'tailwind-custom': { rules: tailwindRules },
+    },
+    rules: {
+      'tailwind-custom/no-non-theme-tailwind-colors': 'warn',
+    },
+  },
+  ...pluginVue.configs['flat/essential'],
+]
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./scripts/eslint-plugin-tailwind-custom-colors.js
+───────────────────────────────────────────────
+// eslint-plugin-tailwind-custom-colors.js
+export const rules = {
+  'no-non-theme-tailwind-colors': {
+    create(context) {
+      const disallowedRegex =
+        /\b(?:text|bg|border|ring|focus:ring|hover:bg|hover:border|hover:text)-(?:red|green|blue|gray|yellow|purple|pink|indigo|emerald|lime|amber|teal|cyan|fuchsia|violet)-(?:100|200|300|400|500|600|700|800|900)\b/
+
+      return {
+        Literal(node) {
+          if (
+            typeof node.value === 'string' &&
+            disallowedRegex.test(node.value)
+          ) {
+            context.report({
+              node,
+              message:
+                'Avoid using non-theme Tailwind colors. Use theme tokens like text-error, bg-primary, etc.',
+            })
+          }
+        },
+      }
+    },
+  },
+}
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/assets/tailwind.css
+───────────────────────────────────────────────
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/components/atoms/BaseAlert/BaseAlert.cy.js
+───────────────────────────────────────────────
+// src/components/atoms/BaseAlert/BaseAlert.cy.js
+import { mount } from '@cypress/vue'
+import BaseAlert from './BaseAlert.vue'
+
+describe('BaseAlert Component', () => {
+  it('renders correctly with info variant', () => {
+    mount(BaseAlert, {
+      props: { variant: 'info' },
+      slots: {
+        default: 'Info alert',
+      },
+    })
+    cy.get('[role="alert"]')
+      .should('have.class', 'bg-info-light')
+      .and('have.class', 'text-info-dark')
+  })
+
+  it('renders correctly with success variant', () => {
+    mount(BaseAlert, {
+      props: { variant: 'success' },
+      slots: {
+        default: 'Success alert',
+      },
+    })
+    cy.get('[role="alert"]')
+      .should('have.class', 'text-info-darkabg-success-light')
+      .and('have.class', 'text-success-dark')
+  })
+
+  it('renders correctly with warning variant', () => {
+    mount(BaseAlert, {
+      props: { variant: 'warning' },
+      slots: {
+        default: 'Warning alert',
+      },
+    })
+    cy.get('[role="alert"]')
+      .should('have.class', 'bg-warning-light')
+      .and('have.class', 'text-warning-dark')
+  })
+
+  it('renders correctly with danger variant', () => {
+    mount(BaseAlert, {
+      props: { variant: 'danger' },
+      slots: {
+        default: 'Danger alert',
+      },
+    })
+    cy.get('[role="alert"]')
+      .should('have.class', 'bg-error-light')
+      .and('have.class', 'text-error-dark')
+  })
+})
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/components/atoms/BaseButton/BaseButton.cy.js
+───────────────────────────────────────────────
+import { mount } from '@cypress/vue'
+import BaseButton from './BaseButton.vue' // Ensure this path is correct
+
+describe('BaseButton Component', () => {
+  it('renders correctly with primary variant', () => {
+    mount(BaseButton, {
+      props: { variant: 'primary' },
+      slots: {
+        default: 'Primary Button',
+      },
+    })
+    cy.get('[data-cy="button"]')
+      .should('have.class', 'bg-primary')
+      .and('have.class', 'text-white')
+  })
+
+  it('renders correctly with secondary variant', () => {
+    mount(BaseButton, {
+      props: { variant: 'secondary' },
+      slots: {
+        default: 'Secondary Button',
+      },
+    })
+    cy.get('[data-cy="button"]')
+      .should('have.class', 'bg-secondary')
+      .and('have.class', 'text-white')
+  })
+
+  it('renders correctly with primaryOutlined variant', () => {
+    mount(BaseButton, {
+      props: { variant: 'primaryOutlined' },
+      slots: {
+        default: 'Outlined Button',
+      },
+    })
+    cy.get('[data-cy="button"]')
+      .should('have.class', 'border')
+      .and('have.class', 'text-primary')
+  })
+
+  it('displays spinner when loading is true', () => {
+    mount(BaseButton, {
+      props: { loading: true, variant: 'primary' },
+      slots: {
+        default: 'Primary Button',
+      },
+    })
+    cy.get('[data-cy="button"]').should('have.class', 'opacity-70')
+    cy.get('svg.animate-spin').should('exist')
+    cy.get('span').should('not.exist') // Text should be hidden when loading
+  })
+
+  it('emits click event when clicked', () => {
+    mount(BaseButton, {
+      props: { loading: false },
+      slots: {
+        default: 'Clickable Button',
+      },
+    }).then(({ wrapper }) => {
+      cy.get('[data-cy="button"]')
+        .click()
+        .then(() => {
+          const emittedEvents = wrapper.emitted('click')
+          expect(emittedEvents).to.have.length(1) // Expecting exactly one click event to have been emitted
+        })
+    })
+  })
+})
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/components/atoms/BaseCard/BaseCard.cy.js
+───────────────────────────────────────────────
+// src/components/atoms/BaseCard/BaseCard.cy.js
+
+import { mount } from '@cypress/vue'
+import BaseCard from './BaseCard.vue'
+
+describe('BaseCard Component', () => {
+  it('renders card content correctly', () => {
+    mount(BaseCard, {
+      slots: {
+        default: '<p>This is a card content</p>',
+      },
+    })
+    cy.get('div').should('have.class', 'bg-white')
+    cy.get('div').should('have.class', 'shadow-md')
+    cy.get('div').should('have.class', 'rounded')
+    cy.get('div').should('have.class', 'p-6')
+    cy.get('p').should('contain', 'This is a card content')
+  })
+})
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/components/atoms/BaseInput/BaseInput.cy.js
+───────────────────────────────────────────────
+// src/components/atoms/BaseInput/BaseInput.cy.js
+
+import { mount } from '@cypress/vue'
+import BaseInput from './BaseInput.vue'
+
+describe('BaseInput Component', () => {
+  it('renders input with the correct type and placeholder', () => {
+    mount(BaseInput, {
+      props: {
+        type: 'text',
+        placeholder: 'Enter your name',
+      },
+    })
+    cy.get('input').should('have.attr', 'type', 'text')
+    cy.get('input').should('have.attr', 'placeholder', 'Enter your name')
+  })
+
+  it('emits the correct value on input', () => {
+    mount(BaseInput, {
+      props: {
+        modelValue: '',
+      },
+    })
+    cy.get('input')
+      .type('Hello World')
+      .then(() => {
+        // Use Cypress lodash _ to get the last emitted value
+        const emittedValue = Cypress._.last(
+          Cypress.vueWrapper.emitted('update:modelValue')
+        )
+        cy.wrap(emittedValue).should('deep.equal', ['Hello World'])
+      })
+  })
+
+  it('applies correct classes for disabled state', () => {
+    mount(BaseInput, {
+      props: {
+        disabled: true,
+      },
+    })
+    cy.get('input').should('have.class', 'opacity-50')
+    cy.get('input').should('have.class', 'cursor-not-allowed')
+    cy.get('input').should('be.disabled')
+  })
+
+  it('applies correct classes for password type', () => {
+    mount(BaseInput, {
+      props: {
+        type: 'password',
+      },
+    })
+    cy.get('input').should('have.class', 'border-error-light')
+    cy.get('input').should('have.class', 'focus:ring-error-light')
+  })
+})
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/components/atoms/BaseLink/BaseLink.cy.js
+───────────────────────────────────────────────
+// src/components/atoms/BaseLink/BaseLink.cy.js
+
+import { mount } from '@cypress/vue'
+import { createRouter, createWebHistory } from 'vue-router'
+import BaseLink from './BaseLink.vue'
+
+// Setup routes for testing the router-link component
+const routes = [
+  { path: '/', component: { template: '<div>Home Page</div>' } },
+  { path: '/about', component: { template: '<div>About Page</div>' } },
+]
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes,
+})
+
+describe('BaseLink Component', () => {
+  it('renders with the correct `to` attribute', () => {
+    mount(BaseLink, {
+      global: {
+        plugins: [router],
+      },
+      props: {
+        to: '/about',
+      },
+      slots: {
+        default: 'Go to About',
+      },
+    })
+
+    cy.get('a').should('have.attr', 'href', '/about')
+    cy.get('a').should('contain.text', 'Go to About')
+  })
+
+  it('navigates correctly when clicked', () => {
+    mount(BaseLink, {
+      global: {
+        plugins: [router],
+      },
+      props: {
+        to: '/about',
+      },
+      slots: {
+        default: 'Go to About',
+      },
+    })
+
+    cy.get('a').click()
+    cy.url().should('include', '/about')
+  })
+})
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/components/atoms/BaseLoading/BaseLoading.cy.js
+───────────────────────────────────────────────
+// src/components/atoms/BaseLoading/BaseLoading.cy.js
+
+import { mount } from '@cypress/vue'
+import BaseLoading from './BaseLoading.vue'
+
+describe('BaseLoading Component', () => {
+  it('renders the loading spinner', () => {
+    mount(BaseLoading)
+
+    // Check if the loader div is present
+    cy.get('.loader')
+      .should('exist')
+      .and('have.class', 'ease-linear')
+      .and('have.class', 'rounded-full')
+      .and('have.class', 'border-8')
+  })
+
+  it('has the correct fixed position and overlay', () => {
+    mount(BaseLoading)
+
+    // Make sure we're targeting the outer overlay div with the 'fixed' class
+    cy.get('div.fixed')
+      .should('have.class', 'inset-0')
+      .and('have.class', 'bg-black')
+      .and('have.class', 'bg-opacity-50')
+  })
+})
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/components/atoms/BaseModal/BaseModal.cy.js
+───────────────────────────────────────────────
+// src/components/atoms/BaseModal.cy.js
+
+import { mount } from '@cypress/vue'
+import BaseModal from './BaseModal.vue'
+
+describe('BaseModal Component', () => {
+  it('renders the modal when visible is true', () => {
+    mount(BaseModal, {
+      props: {
+        visible: true,
+      },
+    })
+
+    // Assert the modal is rendered
+    cy.get('div.fixed')
+      .should('have.class', 'inset-0')
+      .and('have.class', 'bg-black')
+      .and('have.class', 'bg-opacity-50')
+
+    cy.get('div.bg-white')
+      .should('exist')
+      .and('have.class', 'p-6')
+      .and('have.class', 'rounded')
+  })
+
+  it('emits the close event when close button is clicked', () => {
+    // Mount the component and pass a function as a prop to listen for 'close' event
+    const onCloseSpy = cy.spy().as('onCloseSpy')
+
+    mount(BaseModal, {
+      props: {
+        visible: true,
+        onClose: onCloseSpy, // Attach the spy function to the close event
+      },
+    })
+
+    // Click on the close button
+    cy.get('button').contains('X').click()
+
+    // Check if the event 'close' was called
+    cy.get('@onCloseSpy').should('have.been.calledOnce')
+  })
+
+  it('does not render the modal when visible is false', () => {
+    mount(BaseModal, {
+      props: {
+        visible: false,
+      },
+    })
+
+    // Assert that the modal does not exist
+    cy.get('div.fixed').should('not.exist')
+  })
+})
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/components/atoms/index.js
+───────────────────────────────────────────────
+export { default as BaseAlert } from './BaseAlert/BaseAlert.vue'
+export { default as BaseButton } from './BaseButton/BaseButton.vue'
+export { default as BaseCard } from './BaseCard/BaseCard.vue'
+export { default as BaseInput } from './BaseInput/BaseInput.vue'
+export { default as BaseLink } from './BaseLink/BaseLink.vue'
+export { default as BaseLoading } from './BaseLoading/BaseLoading.vue'
+export { default as BaseModal } from './BaseModal/BaseModal.vue'
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/components/index.js
+───────────────────────────────────────────────
+export * from './atoms'
+export * from './molecules'
+export * from './organisms'
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/components/molecules/BaseNavigation/BaseNavigation.cy.js
+───────────────────────────────────────────────
+import { mount } from '@cypress/vue'
+import BaseNavigation from './BaseNavigation.vue'
+import { createMemoryHistory, createRouter } from 'vue-router'
+import BaseLink from '@/components/atoms/BaseLink/BaseLink.vue'
+
+// Define the routes
+const routes = [
+  { path: '/dashboard', component: { template: '<div>Dashboard Page</div>' } },
+]
+const router = createRouter({
+  history: createMemoryHistory(),
+  routes,
+})
+
+describe('BaseNavigation Component', () => {
+  it('renders the Dashboard link when authenticated', () => {
+    mount(BaseNavigation, {
+      props: {
+        isAuthenticated: true,
+      },
+      global: {
+        plugins: [router],
+        components: {
+          Link: BaseLink, // Register BaseLink as a global component
+        },
+      },
+    })
+
+    // Ensure the dashboard link is visible
+    cy.get('a').should('contain.text', 'Dashboard')
+    cy.get('a').should('have.attr', 'href', '/dashboard')
+  })
+
+  it('does not render the Dashboard link when not authenticated', () => {
+    mount(BaseNavigation, {
+      props: {
+        isAuthenticated: false,
+      },
+      global: {
+        plugins: [router],
+        components: {
+          Link: BaseLink,
+        },
+      },
+    })
+
+    // Ensure the dashboard link is not visible
+    cy.get('a').should('not.exist')
+  })
+})
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/components/molecules/FormField/FormField.cy.js
+───────────────────────────────────────────────
+import { mount } from '@cypress/vue'
+import FormField from './FormField.vue'
+import BaseInput from '@/components/atoms/BaseInput/BaseInput.vue'
+
+describe('FormField Component', () => {
+  it('renders the label and input correctly', () => {
+    mount(FormField, {
+      props: {
+        id: 'test-input',
+        label: 'Test Label',
+        modelValue: '',
+        placeholder: 'Enter text',
+      },
+      global: {
+        components: { BaseInput },
+      },
+    })
+
+    // Check that the label and input are rendered correctly
+    cy.get('label').should('have.text', 'Test Label')
+    cy.get('input')
+      .should('have.attr', 'placeholder', 'Enter text')
+      .should('have.attr', 'id', 'test-input')
+  })
+
+  it('updates the value when typing', () => {
+    const onUpdateSpy = cy.spy().as('onUpdateSpy')
+
+    mount(FormField, {
+      props: {
+        id: 'test-input',
+        label: 'Test Label',
+        modelValue: '',
+        placeholder: 'Enter text',
+        'onUpdate:modelValue': onUpdateSpy,
+      },
+      global: {
+        components: { BaseInput },
+      },
+    })
+
+    cy.get('input').type('Hello World')
+    cy.get('@onUpdateSpy').should('have.been.calledWith', 'Hello World')
+  })
+
+  it('handles disabled state correctly', () => {
+    mount(FormField, {
+      props: {
+        id: 'test-input',
+        label: 'Disabled Input',
+        modelValue: '',
+        disabled: true,
+      },
+      global: {
+        components: { BaseInput },
+      },
+    })
+
+    cy.get('input').should('be.disabled')
+  })
+})
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/components/molecules/index.js
+───────────────────────────────────────────────
+export { default as AuthButton } from './AuthButton/AuthButton.vue'
+export { default as BaseNavigation } from './BaseNavigation/BaseNavigation.vue'
+export { default as FormField } from './FormField/FormField.vue'
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/components/organisms/index.js
+───────────────────────────────────────────────
+// src/components/organisms/index.js
+export { default as BaseHeader } from './BaseHeader/BaseHeader.vue'
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/composables/useAuth.js
+───────────────────────────────────────────────
+// src/composables/useAuth.js
+import { auth } from '@/firebase/firebaseConfig'
+import {
+  login as loginService,
+  logout as logoutService,
+  register as registerService,
+  loginWithGoogle as googleLoginService,
+} from '@/services/authServices'
+
+export const useAuth = () => {
+  // General login function for email/password
+  const login = async (email, password) => {
+    try {
+      const user = await loginService(auth, email, password)
+      console.log('User logged in:', {
+        userName: user.displayName,
+        email: user.email,
+      })
+      return { userName: user.displayName, email: user.email }
+    } catch (error) {
+      console.error('Login failed:', error.message)
+      throw error
+    }
+  }
+
+  // Specific login function using signInWithPopup for Google
+  const loginWithGoogle = async () => {
+    try {
+      const user = await googleLoginService(auth)
+      console.log('User logged in with Google:', {
+        userName: user.displayName,
+        email: user.email,
+      })
+      return { userName: user.displayName, email: user.email }
+    } catch (error) {
+      console.error('Google login failed:', error.message)
+      throw error
+    }
+  }
+
+  // Register function
+  const register = async (email, password) => {
+    try {
+      const userCredential = await registerService(auth, email, password)
+      console.log('User registered:', userCredential.user.email)
+      return userCredential.user
+    } catch (error) {
+      console.error('Registration failed:', error.message)
+      throw error
+    }
+  }
+
+  // Logout function
+  const logout = async () => {
+    try {
+      await logoutService(auth)
+      console.log('User logged out')
+    } catch (error) {
+      console.error('Logout failed:', error.message)
+      throw error
+    }
+  }
+
+  return { login, loginWithGoogle, register, logout }
+}
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/firebase/firebaseConfig.js
+───────────────────────────────────────────────
+// src/firebase.js
+import { initializeApp } from 'firebase/app'
+import { getFirestore } from 'firebase/firestore'
+import {
+  getAuth,
+  setPersistence,
+  browserSessionPersistence,
+} from 'firebase/auth'
+
+// Use Vite's import.meta.env for environment variables
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+}
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig)
+
+// Initialize Firebase services
+const auth = getAuth(app)
+const db = getFirestore(app)
+
+// Set persistence for the auth
+setPersistence(auth, browserSessionPersistence)
+
+export { auth, db }
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/main.js
+───────────────────────────────────────────────
+import { createApp } from 'vue'
+import App from './App.vue'
+import router from './router'
+import '@/assets/tailwind.css'
+
+createApp(App).use(router).mount('#app')
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/router/index.js
+───────────────────────────────────────────────
+// src/router/index.js
+import { createRouter, createWebHistory } from 'vue-router'
+import HomeView from '@/views/Home/HomeView.vue'
+import Login from '@/views/Login/LoginView.vue'
+import Dashboard from '@/views/Dashboard/DashboardView.vue'
+import AuthLayout from '@/layouts/auth/AuthLayout.vue'
+import DefaultLayout from '@/layouts/default/DefaultLayout.vue'
+import { auth } from '@/firebase/firebaseConfig'
+import { onAuthStateChanged } from 'firebase/auth'
+
+const routes = [
+  {
+    path: '/',
+    component: DefaultLayout,
+    children: [
+      {
+        path: '',
+        name: 'Home',
+        component: HomeView,
+      },
+      {
+        path: 'login',
+        name: 'Login',
+        component: Login,
+      },
+      {
+        path: 'register',
+        name: 'Register',
+        component: () => import('@/views/Register/RegisterView.vue'),
+      },
+      {
+        path: 'reset-password',
+        name: 'ResetPassword',
+        component: () => import('@/views/reset-password/ResetPasswordView.vue'),
+      },
+    ],
+  },
+  {
+    path: '/dashboard',
+    component: AuthLayout,
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        name: 'Dashboard',
+        component: Dashboard,
+      },
+    ],
+  },
+  // Optional: Catch-all route for 404 Not Found
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/',
+  },
+]
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes,
+})
+
+// Flag to ensure onAuthStateChanged is only set once
+let isAuthInitialized = false
+
+// Navigation Guard
+router.beforeEach((to, from, next) => {
+  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
+
+  if (!isAuthInitialized) {
+    // Pause the navigation by returning a Promise
+    return new Promise((resolve) => {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        isAuthInitialized = true
+        unsubscribe() // Stop listening after the first event
+
+        if (requiresAuth && !user) {
+          // Redirect to Login page if not authenticated
+          next({ name: 'Login', query: { redirect: to.fullPath } })
+        } else {
+          next()
+        }
+
+        resolve()
+      })
+    })
+  } else {
+    const user = auth.currentUser
+    if (requiresAuth && !user) {
+      next({ name: 'Login', query: { redirect: to.fullPath } })
+    } else {
+      next()
+    }
+  }
+})
+
+export default router
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/services/authServices.cy.js
+───────────────────────────────────────────────
+import { login, logout, register, loginWithGoogle } from './authServices'
+import sinon from 'sinon'
+
+describe('Auth Service', () => {
+  let mockAuth
+
+  beforeEach(() => {
+    // Re-create the mock object before each test
+    mockAuth = {
+      signInWithEmailAndPassword: sinon.stub(),
+      signOut: sinon.stub(),
+      createUserWithEmailAndPassword: sinon.stub(),
+      signInWithPopup: sinon.stub(),
+    }
+  })
+
+  describe('login function', () => {
+    it('should handle login errors correctly', async () => {
+      const errorMessage = 'Login failed'
+      mockAuth.signInWithEmailAndPassword.rejects(new Error(errorMessage))
+
+      try {
+        await login(
+          mockAuth,
+          'test@example.com',
+          'wrongpassword',
+          mockAuth.signInWithEmailAndPassword
+        )
+        throw new Error('Expected promise to be rejected, but it was resolved')
+      } catch (error) {
+        expect(error.message).to.equal(errorMessage)
+      }
+    })
+
+    it('should return user on successful login', async () => {
+      const mockUser = { uid: '12345', email: 'test@example.com' }
+      mockAuth.signInWithEmailAndPassword.resolves({ user: mockUser })
+
+      const result = await login(
+        mockAuth,
+        'test@example.com',
+        'correctpassword',
+        mockAuth.signInWithEmailAndPassword
+      )
+      expect(result).to.deep.equal(mockUser)
+    })
+  })
+
+  describe('logout function', () => {
+    it('should call signOut and complete successfully', async () => {
+      mockAuth.signOut.resolves()
+
+      await logout(mockAuth, mockAuth.signOut)
+
+      expect(mockAuth.signOut).to.have.been.calledOnce
+    })
+
+    it('should handle errors during logout', async () => {
+      const errorMessage = 'Logout failed'
+      mockAuth.signOut.rejects(new Error(errorMessage))
+
+      try {
+        await logout(mockAuth, mockAuth.signOut)
+        throw new Error('Expected promise to be rejected, but it was resolved')
+      } catch (error) {
+        expect(error.message).to.equal(errorMessage)
+      }
+    })
+  })
+
+  describe('register function', () => {
+    it('should handle registration errors correctly', async () => {
+      mockAuth.createUserWithEmailAndPassword.rejects({
+        code: 'auth/email-already-in-use',
+        message: 'The email address is already in use.',
+      })
+
+      try {
+        await register(mockAuth, 'existing-email@example.com', 'password123')
+        throw new Error('Expected registration to fail')
+      } catch (error) {
+        expect(error.message).to.equal(
+          'This email is already registered. Please use another email or login.'
+        )
+      }
+    })
+
+    it('should return user on successful registration', async () => {
+      const mockUserCredential = { user: { email: 'new-user@example.com' } }
+      mockAuth.createUserWithEmailAndPassword.resolves(mockUserCredential)
+
+      const userCredential = await register(
+        mockAuth,
+        'new-user@example.com',
+        'password123'
+      )
+      expect(userCredential).to.equal(mockUserCredential)
+    })
+  })
+
+  describe('loginWithGoogle function', () => {
+    it('should handle Google login errors correctly', async () => {
+      const errorMessage = 'Google login failed'
+      mockAuth.signInWithPopup.rejects(new Error(errorMessage))
+
+      try {
+        await loginWithGoogle(mockAuth, mockAuth.signInWithPopup)
+        throw new Error('Expected promise to be rejected, but it was resolved')
+      } catch (error) {
+        expect(error.message).to.equal(errorMessage)
+      }
+    })
+
+    it('should return user on successful Google login', async () => {
+      const mockUser = { uid: '12345', email: 'test@example.com' }
+      mockAuth.signInWithPopup.resolves({ user: mockUser })
+
+      const result = await loginWithGoogle(mockAuth, mockAuth.signInWithPopup)
+      expect(result).to.deep.equal(mockUser)
+    })
+  })
+})
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/services/authServices.js
+───────────────────────────────────────────────
+// src/services/authServices.js
+
+import {
+  createUserWithEmailAndPassword as defaultCreateUserWithEmailAndPassword,
+  signInWithEmailAndPassword as defaultSignInWithEmailAndPassword,
+  signOut as defaultSignOut,
+  GoogleAuthProvider,
+  signInWithPopup as defaultSignInWithPopup,
+} from 'firebase/auth'
+
+export const login = async (
+  auth,
+  email,
+  password,
+  signInFn = defaultSignInWithEmailAndPassword
+) => {
+  try {
+    const userCredential = await signInFn(auth, email, password)
+    return userCredential.user
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error('Error during login:', error.message)
+      throw new Error(error.message)
+    }
+    throw new Error('An unknown error occurred during login.')
+  }
+}
+
+export const logout = async (auth, signOutFn = defaultSignOut) => {
+  try {
+    await signOutFn(auth)
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error('Error during logout:', error.message)
+      throw new Error(error.message)
+    }
+    throw new Error('An unknown error occurred during logout.')
+  }
+}
+
+export const register = async (auth, email, password) => {
+  try {
+    // Use auth.createUserWithEmailAndPassword so that the function can work with both real and mock auth
+    const userCredential = await auth.createUserWithEmailAndPassword(
+      email,
+      password
+    )
+    return userCredential
+  } catch (error) {
+    if (error.code === 'auth/email-already-in-use') {
+      console.error('Error during registration:', error.message)
+      throw new Error(
+        'This email is already registered. Please use another email or login.'
+      )
+    } else {
+      console.error('Error during registration:', error.message)
+      throw new Error('Registration failed')
+    }
+  }
+}
+
+export const loginWithGoogle = async (
+  auth,
+  signInWithPopupFn = defaultSignInWithPopup
+) => {
+  try {
+    const provider = new GoogleAuthProvider()
+    const userCredential = await signInWithPopupFn(auth, provider)
+    return userCredential.user
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error('Error during Google login:', error.message)
+      throw new Error(error.message)
+    }
+    throw new Error('An unknown error occurred during Google login.')
+  }
+}
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/services/firebaseMock.js
+───────────────────────────────────────────────
+// src/services/firebaseAuthMock.js
+
+import sinon from 'sinon'
+
+export const mockAuth = {
+  settings: {},
+  signInWithEmailAndPassword: sinon.stub(),
+  signOut: sinon.stub(),
+  createUserWithEmailAndPassword: sinon.stub(),
+  signInWithPopup: sinon.stub(),
+}
+
+export const resetAuthMocks = () => {
+  mockAuth.signInWithEmailAndPassword.reset()
+  mockAuth.signOut.reset()
+  mockAuth.createUserWithEmailAndPassword.reset()
+  mockAuth.signInWithPopup.reset()
+}
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./tailwind.config.js
+───────────────────────────────────────────────
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          DEFAULT: '#1f2937',
+          hover: '#111827',
+          light: '#374151',
+          dark: '#0f172a',
+        },
+        secondary: {
+          DEFAULT: '#64748b',
+          light: '#94a3b8',
+          dark: '#475569',
+        },
+        accent: {
+          DEFAULT: '#ff9f1c',
+          light: '#ffb347',
+          dark: '#cc7a00',
+        },
+        success: {
+          DEFAULT: '#22c55e',
+          light: '#4ade80',
+          dark: '#15803d',
+        },
+        error: {
+          DEFAULT: '#ef4444',
+          light: '#f87171',
+          dark: '#b91c1c',
+        },
+        warning: {
+          DEFAULT: '#facc15',
+          light: '#fde047',
+          dark: '#ca8a04',
+        },
+        info: {
+          DEFAULT: '#0ea5e9',
+          light: '#38bdf8',
+          dark: '#0369a1',
+        },
+        background: {
+          DEFAULT: '#f8fafc',
+          dark: '#1e293b',
+        },
+        surface: {
+          DEFAULT: '#ffffff',
+          dark: '#111827',
+        },
+        border: {
+          DEFAULT: '#e2e8f0',
+          dark: '#334155',
+        },
+        text: {
+          primary: '#1e293b',
+          secondary: '#64748b',
+          tertiary: '#718096',
+          inverted: '#ffffff',
+        },
+        muted: '#f1f5f9',
+      },
+      spacing: {
+        xs: '0.25rem',
+        sm: '0.5rem',
+        md: '1rem',
+        lg: '1.5rem',
+        xl: '2rem',
+      },
+      borderRadius: {
+        sm: '0.375rem',
+        md: '0.5rem',
+        lg: '1rem',
+        xl: '1.5rem',
+      },
+      boxShadow: {
+        sm: '0 1px 3px rgba(0, 0, 0, 0.12)',
+        md: '0 4px 6px rgba(0, 0, 0, 0.1)',
+        lg: '0 10px 15px rgba(0, 0, 0, 0.1)',
+        xl: '0 15px 25px rgba(0, 0, 0, 0.15)',
+      },
+      transitionDuration: {
+        fast: '150ms',
+        normal: '250ms',
+        slow: '400ms',
+      },
+      transitionTimingFunction: {
+        ease: 'ease',
+        'ease-in': 'ease-in',
+        'ease-out': 'ease-out',
+      },
+      container: {
+        center: true,
+        padding: {
+          DEFAULT: '1rem',
+          sm: '1rem',
+          lg: '2rem',
+          xl: '2rem',
+        },
+      },
+    },
+  },
+  plugins: [],
+}
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./vite.config.js
+───────────────────────────────────────────────
+import { defineConfig } from "vite";
+import vue from "@vitejs/plugin-vue";
+import path from "path";
+import eslintPlugin from "vite-plugin-eslint";
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [
+    vue(),
+    eslintPlugin({
+      // **Options**
+      // Automatically fix linting errors during development and build
+      fix: true,
+
+      // Enable ESLint on build
+      include: ["src/**/*.vue", "src/**/*.js", "src/**/*.ts"],
+
+      // Exclude specific files or directories
+      exclude: ["node_modules/**", "dist/**"],
+    }),
+  ],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "src"),
+      "@/components": path.resolve(__dirname, "src/components"),
+      "@/assets": path.resolve(__dirname, "src/assets"),
+      "@/composables": path.resolve(__dirname, "src/composables"),
+      "@/firebase": path.resolve(__dirname, "src/firebase"),
+      "@/layouts": path.resolve(__dirname, "src/layouts"),
+      "@/services": path.resolve(__dirname, "src/services"),
+      "@/utils": path.resolve(__dirname, "src/utils"),
+      "@/views": path.resolve(__dirname, "src/views"),
+    },
+  },
+  server: {
+    hmr: {
+      overlay: false, // Disable overlay for ESLint warnings/errors
+    },
+  },
+});
+
+

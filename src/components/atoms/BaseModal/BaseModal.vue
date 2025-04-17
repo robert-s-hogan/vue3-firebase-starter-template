@@ -7,7 +7,7 @@
     <div class="bg-white p-6 rounded relative">
       <button
         @click="$emit('close')"
-        class="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+        class="absolute top-2 right-2 text-secondary hover:text-primary"
       >
         X
       </button>
