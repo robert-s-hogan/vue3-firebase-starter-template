@@ -1,7 +1,7 @@
 // src/services/authServices.js
 
 import {
-  createUserWithEmailAndPassword as defaultCreateUserWithEmailAndPassword,
+  createUserWithEmailAndPassword as firebaseCreateUser,
   signInWithEmailAndPassword as defaultSignInWithEmailAndPassword,
   signOut as defaultSignOut,
   GoogleAuthProvider,
@@ -39,22 +39,70 @@ export const logout = async (auth, signOutFn = defaultSignOut) => {
 }
 
 export const register = async (auth, email, password) => {
+  // --- Add/Confirm Debugging ---
+  console.log(
+    '%c[AuthService Register] Received auth object:',
+    'color: #ff00ff;',
+    auth
+  )
+  console.log(
+    '%c[AuthService Register] Type of auth object:',
+    'color: #ff00ff;',
+    typeof auth
+  )
+  console.log(
+    '%c[AuthService Register] Does auth?.createUserWithEmailAndPassword exist?',
+    'color: #ff00ff;',
+    typeof auth?.createUserWithEmailAndPassword === 'function'
+  )
+  // Also check against the directly imported function
+  console.log(
+    '%c[AuthService Register] Does firebaseCreateUser exist?',
+    'color: #ff00ff;',
+    typeof firebaseCreateUser === 'function'
+  )
+  // --- End Debugging ---
+
   try {
-    // Use auth.createUserWithEmailAndPassword so that the function can work with both real and mock auth
+    // Use the function directly from the auth object.
+    // The check below will throw if the method isn't there.
+    if (typeof auth?.createUserWithEmailAndPassword !== 'function') {
+      console.error(
+        '[AuthService Register] FATAL: auth.createUserWithEmailAndPassword is NOT a function on the received object!',
+        auth
+      )
+      throw new Error(
+        'Internal Error: createUserWithEmailAndPassword method not found on auth object.'
+      )
+    }
+
     const userCredential = await auth.createUserWithEmailAndPassword(
       email,
       password
     )
-    return userCredential
+    console.log(
+      '%c[AuthService Register] Registration successful:',
+      'color: green;',
+      userCredential.user.email
+    )
+    return userCredential // Return the whole credential object
   } catch (error) {
     if (error.code === 'auth/email-already-in-use') {
-      console.error('Error during registration:', error.message)
+      console.error(
+        '[AuthService Register] Registration Error (Email exists):',
+        error.message
+      )
       throw new Error(
         'This email is already registered. Please use another email or login.'
       )
     } else {
-      console.error('Error during registration:', error.message)
-      throw new Error('Registration failed')
+      console.error(
+        '[AuthService Register] Unexpected Registration Error:',
+        error
+      )
+      throw new Error(
+        error.message || 'Registration failed due to an unexpected error.'
+      )
     }
   }
 }

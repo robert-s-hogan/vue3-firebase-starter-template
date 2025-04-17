@@ -49,23 +49,23 @@ let unsubscribeAuth = null // Store the unsubscribe function
 
 // --- Helper function to check auth and decide navigation ---
 function checkAuthAndNavigate(to, requiresAuth, user, next) {
-  // Check if running in development mode (using Vite's boolean flag)
   const isDevelopment = import.meta.env.DEV
 
   if (requiresAuth && !user) {
     // Route requires auth, but no user is logged in
     if (isDevelopment) {
-      // --- DEVELOPMENT MODE BYPASS ---
+      // Keep this useful dev warning
       console.warn(
-        `DEV MODE: Bypassing auth check for "${to.path}". User is not logged in.`
+        `%c[AuthGuard] DEV MODE: Bypassing auth check for "${to.path}".`,
+        'color: orange;'
       )
-      next() // Allow navigation anyway
-      // --- END DEVELOPMENT MODE BYPASS ---
+      next()
     } else {
-      // --- PRODUCTION MODE ENFORCEMENT ---
-      console.log(`Redirecting to Login. Route "${to.path}" requires auth.`)
-      next({ name: 'Login', query: { redirect: to.fullPath } }) // Redirect to Login
-      // --- END PRODUCTION MODE ENFORCEMENT ---
+      // Keep this production log
+      console.log(
+        `[AuthGuard] Redirecting to Login. Route "${to.path}" requires auth.`
+      )
+      next({ name: 'Login', query: { redirect: to.fullPath } })
     }
   } else {
     // Route doesn't require auth OR user is logged in
@@ -78,49 +78,51 @@ router.beforeEach((to, from, next) => {
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
 
   if (!isAuthInitialized) {
-    // First navigation, wait for Firebase auth state
-    console.log('Auth not initialized. Waiting for onAuthStateChanged...')
+    // First navigation: Wait for the initial auth state determination
     // Ensure we only attach the listener once
     if (!unsubscribeAuth) {
       unsubscribeAuth = onAuthStateChanged(
         auth,
         (user) => {
-          console.log(
-            'onAuthStateChanged fired. User:',
-            user ? user.email : 'null'
-          )
           isAuthInitialized = true
-          // Don't unsubscribe here if you want auth state updates later,
-          // but for a basic guard, unsubscribing after first check is fine.
-          // if (unsubscribeAuth) unsubscribeAuth(); // Optional: unsubscribe after first check
-
-          // Now that we have the user state, check auth requirements
+          // Log the determined initial state *before* checking navigation
+          console.log(
+            `%c[AuthGuard] Initial state determined. User: ${
+              user ? user.email : 'Not Logged In'
+            }`,
+            user ? 'color: green;' : 'color: red;' // Style based on status
+          )
           checkAuthAndNavigate(to, requiresAuth, user, next)
         },
         (error) => {
-          // Handle potential errors during initial auth check
-          console.error('Error getting initial auth state:', error)
+          // Keep this important error log
+          console.error('[AuthGuard] Error getting initial auth state:', error)
           isAuthInitialized = true // Mark as initialized even on error
-          // Decide how to handle this - maybe redirect to an error page or login?
-          // For now, treat as unauthenticated:
+          // Log the state determined on error
+          console.log(
+            `%c[AuthGuard] Initial state determined (error). User: Not Logged In`,
+            'color: red;'
+          )
           checkAuthAndNavigate(to, requiresAuth, null, next)
         }
       )
     }
-    // Don't call next() here, wait for the onAuthStateChanged callback
+    // Don't call next() or log here, wait for the onAuthStateChanged callback
   } else {
-    // Auth state already initialized, check with current user
+    // Auth already initialized, check with current user
     const user = auth.currentUser
-    console.log('Auth initialized. Current user:', user ? user.email : 'null')
+    // Log the current state *before* checking navigation
+    console.log(
+      `%c[AuthGuard] Navigating. Current User: ${
+        user ? user.email : 'Not Logged In'
+      }`,
+      user ? 'color: green;' : 'color: red;' // Style based on status
+    )
     checkAuthAndNavigate(to, requiresAuth, user, next)
   }
 })
 
-// Optional: Clean up listener when app closes (though often not strictly necessary for SPAs)
-// router.afterEach(() => {
-//   if (unsubscribeAuth && /* condition to check if app is truly closing */) {
-//      unsubscribeAuth();
-//   }
-// });
+// Optional: Clean up listener when app closes
+// router.afterEach(() => { ... });
 
 export default router
