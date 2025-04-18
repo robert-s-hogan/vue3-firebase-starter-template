@@ -1,4 +1,4 @@
-// src/components/atoms/BaseLoading/BaseLoading.cy.js
+// src/components/atoms/BaseLoading/BaseLoading.cy.ts
 
 import { mount } from '@cypress/vue'
 import BaseLoading from './BaseLoading.vue'

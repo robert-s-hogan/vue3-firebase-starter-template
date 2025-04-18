@@ -1,4 +1,4 @@
-// src/components/atoms/BaseInput/BaseInput.cy.js
+// src/components/atoms/BaseInput/BaseInput.cy.ts
 
 import { mount } from '@cypress/vue'
 import BaseInput from './BaseInput.vue'
@@ -26,7 +26,7 @@ describe('BaseInput Component', () => {
       .then(() => {
         // Use Cypress lodash _ to get the last emitted value
         const emittedValue = Cypress._.last(
-          Cypress.vueWrapper.emitted('update:modelValue')
+          Cypress.vueWrapper.emitted('update:modelValue') as string[][]
         )
         cy.wrap(emittedValue).should('deep.equal', ['Hello World'])
       })

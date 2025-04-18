@@ -9,7 +9,7 @@
     "clean-install": "rm -rf node_modules && rm -rf dist && rm pnpm-lock.yaml && pnpm install",
     "build": "pnpm run lint && pnpm vite build",
     "create-atomic-structure": "chmod +x ./scripts/create-atomic-structure.sh",
-    "all-files": "bash ./scripts/all-files",
+    "all-files": "bash ./scripts/generate-all-files.sh",
     "lint": "pnpm eslint .",
     "lint:fix": "pnpm eslint . --fix",
     "preview": "pnpm vite preview",

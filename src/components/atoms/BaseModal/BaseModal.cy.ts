@@ -1,4 +1,4 @@
-// src/components/atoms/BaseModal.cy.js
+// src/components/atoms/BaseModal.cy.ts
 
 import { mount } from '@cypress/vue'
 import BaseModal from './BaseModal.vue'

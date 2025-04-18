@@ -1,4 +1,4 @@
-// src/components/atoms/BaseLink/BaseLink.cy.js
+// src/components/atoms/BaseLink/BaseLink.cy.ts
 
 import { mount } from '@cypress/vue'
 import { createRouter, createWebHistory } from 'vue-router'

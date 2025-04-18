@@ -1,7 +1,10 @@
+// cypress/tsconfig.json
 {
-  "extends": "../tsconfig.json",
-  "include": ["**/*.cy.ts"],
   "compilerOptions": {
-    "types": ["cypress"]
-  }
+    "target": "es5", // Or your preferred target
+    "lib": ["es5", "dom"],
+    "types": ["cypress", "@cypress/vue", "node"] // Include node for things like require/module if needed
+    // Add "skipLibCheck": true if you encounter issues with libraries
+  },
+  "include": ["../node_modules/cypress", "./**/*.ts"] // Adjust paths as needed
 }

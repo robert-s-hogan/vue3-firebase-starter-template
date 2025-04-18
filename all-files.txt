@@ -1,28 +1,4 @@
 ═══════════════════════════════════════════════
-📄 FILE: ./eslint.config.js
-───────────────────────────────────────────────
-import globals from 'globals'
-import pluginVue from 'eslint-plugin-vue'
-import { rules as tailwindRules } from './scripts/eslint-plugin-tailwind-custom-colors.js'
-
-export default [
-  {
-    files: ['**/*.{js,mjs,cjs,vue}'],
-    languageOptions: {
-      globals: globals.browser,
-    },
-    plugins: {
-      'tailwind-custom': { rules: tailwindRules },
-    },
-    rules: {
-      'tailwind-custom/no-non-theme-tailwind-colors': 'warn',
-    },
-  },
-  ...pluginVue.configs['flat/essential'],
-]
-
-
-═══════════════════════════════════════════════
 📄 FILE: ./scripts/eslint-plugin-tailwind-custom-colors.js
 ───────────────────────────────────────────────
 // eslint-plugin-tailwind-custom-colors.js
@@ -649,7 +625,16 @@ export const useAuth = () => {
 
 
 ═══════════════════════════════════════════════
-📄 FILE: ./src/firebase/firebaseConfig.js
+📄 FILE: ./src/firebase/firebase.d.ts
+───────────────────────────────────────────────
+declare module '@/firebase/firebaseConfig' {
+  import { Auth } from 'firebase/auth'
+  export const auth: Auth
+}
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/firebase/firebaseConfig.ts
 ───────────────────────────────────────────────
 // src/firebase/firebaseConfig.js
 import { initializeApp } from 'firebase/app'
@@ -698,7 +683,7 @@ console.log(
 console.log(
   '%c[FirebaseConfig] Does auth.createUserWithEmailAndPassword exist *immediately* after getAuth?',
   'color: orange;',
-  typeof auth?.createUserWithEmailAndPassword === 'function'
+  typeof typeof firebaseCreateUserDirectly === 'function'
 )
 console.log(
   '%c[FirebaseConfig] Does directly imported firebaseCreateUserDirectly exist?',
@@ -733,7 +718,7 @@ export { auth, db }
 
 
 ═══════════════════════════════════════════════
-📄 FILE: ./src/main.js
+📄 FILE: ./src/main.ts
 ───────────────────────────────────────────────
 import { createApp } from 'vue'
 import App from './App.vue'
@@ -744,10 +729,17 @@ createApp(App).use(router).mount('#app')
 
 
 ═══════════════════════════════════════════════
-📄 FILE: ./src/router/index.js
+📄 FILE: ./src/router/index.ts
 ───────────────────────────────────────────────
-// src/router/index.js
-import { createRouter, createWebHistory } from 'vue-router'
+// src/router/index.ts
+import {
+  createRouter,
+  createWebHistory,
+  type RouteRecordRaw,
+  type NavigationGuardNext,
+  type RouteLocationNormalized,
+} from 'vue-router'
+import type { User } from 'firebase/auth'
 import HomeView from '@/views/Home/HomeView.vue'
 import Login from '@/views/Login/LoginView.vue'
 import Dashboard from '@/views/Dashboard/DashboardView.vue'
@@ -756,7 +748,7 @@ import DefaultLayout from '@/layouts/default/DefaultLayout.vue'
 import { auth } from '@/firebase/firebaseConfig'
 import { onAuthStateChanged } from 'firebase/auth'
 
-const routes = [
+const routes: RouteRecordRaw[] = [
   {
     path: '/',
     component: DefaultLayout,
@@ -792,61 +784,58 @@ const router = createRouter({
   routes,
 })
 
+// 👇 Explicitly typed cleanup function
+let unsubscribeAuth: (() => void) | null = null
 let isAuthInitialized = false
-let unsubscribeAuth = null // Store the unsubscribe function
 
 // --- Helper function to check auth and decide navigation ---
-function checkAuthAndNavigate(to, requiresAuth, user, next) {
+function checkAuthAndNavigate(
+  to: RouteLocationNormalized,
+  requiresAuth: boolean,
+  user: User | null,
+  next: NavigationGuardNext
+) {
   const isDevelopment = import.meta.env.DEV
 
   if (requiresAuth && !user) {
-    // Route requires auth, but no user is logged in
     if (isDevelopment) {
-      // Keep this useful dev warning
       console.warn(
         `%c[AuthGuard] DEV MODE: Bypassing auth check for "${to.path}".`,
         'color: orange;'
       )
       next()
     } else {
-      // Keep this production log
       console.log(
         `[AuthGuard] Redirecting to Login. Route "${to.path}" requires auth.`
       )
       next({ name: 'Login', query: { redirect: to.fullPath } })
     }
   } else {
-    // Route doesn't require auth OR user is logged in
-    next() // Allow navigation
+    next()
   }
 }
 
 // --- Navigation Guard ---
 router.beforeEach((to, from, next) => {
-  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
+  const requiresAuth = to.matched.some((record) => record.meta?.requiresAuth)
 
   if (!isAuthInitialized) {
-    // First navigation: Wait for the initial auth state determination
-    // Ensure we only attach the listener once
     if (!unsubscribeAuth) {
       unsubscribeAuth = onAuthStateChanged(
         auth,
         (user) => {
           isAuthInitialized = true
-          // Log the determined initial state *before* checking navigation
           console.log(
             `%c[AuthGuard] Initial state determined. User: ${
               user ? user.email : 'Not Logged In'
             }`,
-            user ? 'color: green;' : 'color: red;' // Style based on status
+            user ? 'color: green;' : 'color: red;'
           )
           checkAuthAndNavigate(to, requiresAuth, user, next)
         },
         (error) => {
-          // Keep this important error log
           console.error('[AuthGuard] Error getting initial auth state:', error)
-          isAuthInitialized = true // Mark as initialized even on error
-          // Log the state determined on error
+          isAuthInitialized = true
           console.log(
             `%c[AuthGuard] Initial state determined (error). User: Not Logged In`,
             'color: red;'
@@ -855,23 +844,18 @@ router.beforeEach((to, from, next) => {
         }
       )
     }
-    // Don't call next() or log here, wait for the onAuthStateChanged callback
+    // Wait for onAuthStateChanged to call next()
   } else {
-    // Auth already initialized, check with current user
     const user = auth.currentUser
-    // Log the current state *before* checking navigation
     console.log(
       `%c[AuthGuard] Navigating. Current User: ${
         user ? user.email : 'Not Logged In'
       }`,
-      user ? 'color: green;' : 'color: red;' // Style based on status
+      user ? 'color: green;' : 'color: red;'
     )
     checkAuthAndNavigate(to, requiresAuth, user, next)
   }
 })
-
-// Optional: Clean up listener when app closes
-// router.afterEach(() => { ... });
 
 export default router
 
@@ -1004,137 +988,65 @@ describe('Auth Service', () => {
 
 
 ═══════════════════════════════════════════════
-📄 FILE: ./src/services/authServices.js
+📄 FILE: ./src/services/authServices.ts
 ───────────────────────────────────────────────
-// src/services/authServices.js
-
+// src/services/authServices.ts
+import type { Auth, UserCredential } from 'firebase/auth'
 import {
-  createUserWithEmailAndPassword as firebaseCreateUser,
-  signInWithEmailAndPassword as defaultSignInWithEmailAndPassword,
-  signOut as defaultSignOut,
-  GoogleAuthProvider,
-  signInWithPopup as defaultSignInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
 } from 'firebase/auth'
+import type { FirebaseError } from 'firebase/app'
 
+/* ------------------------------------------------------------------ */
+/*  login                                                             */
+/* ------------------------------------------------------------------ */
 export const login = async (
-  auth,
-  email,
-  password,
-  signInFn = defaultSignInWithEmailAndPassword
-) => {
-  try {
-    const userCredential = await signInFn(auth, email, password)
-    return userCredential.user
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error('Error during login:', error.message)
-      throw new Error(error.message)
-    }
-    throw new Error('An unknown error occurred during login.')
-  }
+  auth: Auth,
+  email: string,
+  password: string,
+  signInFn: typeof signInWithEmailAndPassword = signInWithEmailAndPassword
+): Promise<UserCredential> => {
+  return await signInFn(auth, email, password)
 }
 
-export const logout = async (auth, signOutFn = defaultSignOut) => {
-  try {
-    await signOutFn(auth)
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error('Error during logout:', error.message)
-      throw new Error(error.message)
-    }
-    throw new Error('An unknown error occurred during logout.')
-  }
+/* ------------------------------------------------------------------ */
+/*  logout                                                            */
+/* ------------------------------------------------------------------ */
+export const logout = async (
+  auth: Auth,
+  signOutFn: typeof signOut = signOut
+): Promise<void> => {
+  await signOutFn(auth)
 }
 
-export const register = async (auth, email, password) => {
-  // --- Add/Confirm Debugging ---
-  console.log(
-    '%c[AuthService Register] Received auth object:',
-    'color: #ff00ff;',
-    auth
-  )
-  console.log(
-    '%c[AuthService Register] Type of auth object:',
-    'color: #ff00ff;',
-    typeof auth
-  )
-  console.log(
-    '%c[AuthService Register] Does auth?.createUserWithEmailAndPassword exist?',
-    'color: #ff00ff;',
-    typeof auth?.createUserWithEmailAndPassword === 'function'
-  )
-  // Also check against the directly imported function
-  console.log(
-    '%c[AuthService Register] Does firebaseCreateUser exist?',
-    'color: #ff00ff;',
-    typeof firebaseCreateUser === 'function'
-  )
-  // --- End Debugging ---
-
+/* ------------------------------------------------------------------ */
+/*  register                                                          */
+/* ------------------------------------------------------------------ */
+export const register = async (
+  auth: Auth,
+  email: string,
+  password: string,
+  createUserFn: typeof createUserWithEmailAndPassword = createUserWithEmailAndPassword
+): Promise<UserCredential> => {
   try {
-    // Use the function directly from the auth object.
-    // The check below will throw if the method isn't there.
-    if (typeof auth?.createUserWithEmailAndPassword !== 'function') {
-      console.error(
-        '[AuthService Register] FATAL: auth.createUserWithEmailAndPassword is NOT a function on the received object!',
-        auth
-      )
-      throw new Error(
-        'Internal Error: createUserWithEmailAndPassword method not found on auth object.'
-      )
+    return await createUserFn(auth, email, password)
+  } catch (err: unknown) {
+    if (err && typeof err === 'object' && 'code' in err) {
+      const firebaseError = err as FirebaseError
+      if (firebaseError.code === 'auth/email-already-in-use') {
+        throw new Error('This email is already registered.')
+      }
+      throw new Error(firebaseError.message)
     }
-
-    const userCredential = await auth.createUserWithEmailAndPassword(
-      email,
-      password
-    )
-    console.log(
-      '%c[AuthService Register] Registration successful:',
-      'color: green;',
-      userCredential.user.email
-    )
-    return userCredential // Return the whole credential object
-  } catch (error) {
-    if (error.code === 'auth/email-already-in-use') {
-      console.error(
-        '[AuthService Register] Registration Error (Email exists):',
-        error.message
-      )
-      throw new Error(
-        'This email is already registered. Please use another email or login.'
-      )
-    } else {
-      console.error(
-        '[AuthService Register] Unexpected Registration Error:',
-        error
-      )
-      throw new Error(
-        error.message || 'Registration failed due to an unexpected error.'
-      )
-    }
-  }
-}
-
-export const loginWithGoogle = async (
-  auth,
-  signInWithPopupFn = defaultSignInWithPopup
-) => {
-  try {
-    const provider = new GoogleAuthProvider()
-    const userCredential = await signInWithPopupFn(auth, provider)
-    return userCredential.user
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error('Error during Google login:', error.message)
-      throw new Error(error.message)
-    }
-    throw new Error('An unknown error occurred during Google login.')
+    throw new Error('Registration failed due to an unexpected error.')
   }
 }
 
 
 ═══════════════════════════════════════════════
-📄 FILE: ./src/services/firebaseMock.js
+📄 FILE: ./src/services/firebaseMock.ts
 ───────────────────────────────────────────────
 // src/services/firebaseAuthMock.js
 
@@ -1153,6 +1065,16 @@ export const resetAuthMocks = () => {
   mockAuth.signOut.reset()
   mockAuth.createUserWithEmailAndPassword.reset()
   mockAuth.signInWithPopup.reset()
+}
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/shim-vue.d.ts
+───────────────────────────────────────────────
+declare module '*.vue' {
+  import type { DefineComponent } from 'vue'
+  const component: DefineComponent<{}, {}, any>
+  export default component
 }
 
 
@@ -1263,50 +1185,5 @@ export default {
   },
   plugins: [],
 }
-
-
-═══════════════════════════════════════════════
-📄 FILE: ./vite.config.js
-───────────────────────────────────────────────
-import { defineConfig } from "vite";
-import vue from "@vitejs/plugin-vue";
-import path from "path";
-import eslintPlugin from "vite-plugin-eslint";
-
-// https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [
-    vue(),
-    eslintPlugin({
-      // **Options**
-      // Automatically fix linting errors during development and build
-      fix: true,
-
-      // Enable ESLint on build
-      include: ["src/**/*.vue", "src/**/*.js", "src/**/*.ts"],
-
-      // Exclude specific files or directories
-      exclude: ["node_modules/**", "dist/**"],
-    }),
-  ],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "src"),
-      "@/components": path.resolve(__dirname, "src/components"),
-      "@/assets": path.resolve(__dirname, "src/assets"),
-      "@/composables": path.resolve(__dirname, "src/composables"),
-      "@/firebase": path.resolve(__dirname, "src/firebase"),
-      "@/layouts": path.resolve(__dirname, "src/layouts"),
-      "@/services": path.resolve(__dirname, "src/services"),
-      "@/utils": path.resolve(__dirname, "src/utils"),
-      "@/views": path.resolve(__dirname, "src/views"),
-    },
-  },
-  server: {
-    hmr: {
-      overlay: false, // Disable overlay for ESLint warnings/errors
-    },
-  },
-});
 
 
