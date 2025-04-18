@@ -45,7 +45,7 @@ console.log(
 console.log(
   '%c[FirebaseConfig] Does auth.createUserWithEmailAndPassword exist *immediately* after getAuth?',
   'color: orange;',
-  typeof auth?.createUserWithEmailAndPassword === 'function'
+  typeof typeof firebaseCreateUserDirectly === 'function'
 )
 console.log(
   '%c[FirebaseConfig] Does directly imported firebaseCreateUserDirectly exist?',

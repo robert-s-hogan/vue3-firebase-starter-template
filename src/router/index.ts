@@ -1,5 +1,12 @@
-// src/router/index.js
-import { createRouter, createWebHistory } from 'vue-router'
+// src/router/index.ts
+import {
+  createRouter,
+  createWebHistory,
+  type RouteRecordRaw,
+  type NavigationGuardNext,
+  type RouteLocationNormalized,
+} from 'vue-router'
+import type { User } from 'firebase/auth'
 import HomeView from '@/views/Home/HomeView.vue'
 import Login from '@/views/Login/LoginView.vue'
 import Dashboard from '@/views/Dashboard/DashboardView.vue'
@@ -8,7 +15,7 @@ import DefaultLayout from '@/layouts/default/DefaultLayout.vue'
 import { auth } from '@/firebase/firebaseConfig'
 import { onAuthStateChanged } from 'firebase/auth'
 
-const routes = [
+const routes: RouteRecordRaw[] = [
   {
     path: '/',
     component: DefaultLayout,
@@ -44,61 +51,58 @@ const router = createRouter({
   routes,
 })
 
+// 👇 Explicitly typed cleanup function
+let unsubscribeAuth: (() => void) | null = null
 let isAuthInitialized = false
-let unsubscribeAuth = null // Store the unsubscribe function
 
 // --- Helper function to check auth and decide navigation ---
-function checkAuthAndNavigate(to, requiresAuth, user, next) {
+function checkAuthAndNavigate(
+  to: RouteLocationNormalized,
+  requiresAuth: boolean,
+  user: User | null,
+  next: NavigationGuardNext
+) {
   const isDevelopment = import.meta.env.DEV
 
   if (requiresAuth && !user) {
-    // Route requires auth, but no user is logged in
     if (isDevelopment) {
-      // Keep this useful dev warning
       console.warn(
         `%c[AuthGuard] DEV MODE: Bypassing auth check for "${to.path}".`,
         'color: orange;'
       )
       next()
     } else {
-      // Keep this production log
       console.log(
         `[AuthGuard] Redirecting to Login. Route "${to.path}" requires auth.`
       )
       next({ name: 'Login', query: { redirect: to.fullPath } })
     }
   } else {
-    // Route doesn't require auth OR user is logged in
-    next() // Allow navigation
+    next()
   }
 }
 
 // --- Navigation Guard ---
 router.beforeEach((to, from, next) => {
-  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
+  const requiresAuth = to.matched.some((record) => record.meta?.requiresAuth)
 
   if (!isAuthInitialized) {
-    // First navigation: Wait for the initial auth state determination
-    // Ensure we only attach the listener once
     if (!unsubscribeAuth) {
       unsubscribeAuth = onAuthStateChanged(
         auth,
         (user) => {
           isAuthInitialized = true
-          // Log the determined initial state *before* checking navigation
           console.log(
             `%c[AuthGuard] Initial state determined. User: ${
               user ? user.email : 'Not Logged In'
             }`,
-            user ? 'color: green;' : 'color: red;' // Style based on status
+            user ? 'color: green;' : 'color: red;'
           )
           checkAuthAndNavigate(to, requiresAuth, user, next)
         },
         (error) => {
-          // Keep this important error log
           console.error('[AuthGuard] Error getting initial auth state:', error)
-          isAuthInitialized = true // Mark as initialized even on error
-          // Log the state determined on error
+          isAuthInitialized = true
           console.log(
             `%c[AuthGuard] Initial state determined (error). User: Not Logged In`,
             'color: red;'
@@ -107,22 +111,17 @@ router.beforeEach((to, from, next) => {
         }
       )
     }
-    // Don't call next() or log here, wait for the onAuthStateChanged callback
+    // Wait for onAuthStateChanged to call next()
   } else {
-    // Auth already initialized, check with current user
     const user = auth.currentUser
-    // Log the current state *before* checking navigation
     console.log(
       `%c[AuthGuard] Navigating. Current User: ${
         user ? user.email : 'Not Logged In'
       }`,
-      user ? 'color: green;' : 'color: red;' // Style based on status
+      user ? 'color: green;' : 'color: red;'
     )
     checkAuthAndNavigate(to, requiresAuth, user, next)
   }
 })
-
-// Optional: Clean up listener when app closes
-// router.afterEach(() => { ... });
 
 export default router

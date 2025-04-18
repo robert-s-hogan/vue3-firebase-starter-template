@@ -1,10 +1,11 @@
+import { Linter } from 'eslint'
 import globals from 'globals'
 import pluginVue from 'eslint-plugin-vue'
 import { rules as tailwindRules } from './scripts/eslint-plugin-tailwind-custom-colors.js'
 
-export default [
+const config: Linter.FlatConfig[] = [
   {
-    files: ['**/*.{js,mjs,cjs,vue}'],
+    files: ['**/*.{js,ts,vue}'],
     languageOptions: {
       globals: globals.browser,
     },
@@ -17,3 +18,5 @@ export default [
   },
   ...pluginVue.configs['flat/essential'],
 ]
+
+export default config

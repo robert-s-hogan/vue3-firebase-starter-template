@@ -651,13 +651,15 @@ export const useAuth = () => {
 ═══════════════════════════════════════════════
 📄 FILE: ./src/firebase/firebaseConfig.js
 ───────────────────────────────────────────────
-// src/firebase.js
+// src/firebase/firebaseConfig.js
 import { initializeApp } from 'firebase/app'
 import { getFirestore } from 'firebase/firestore'
 import {
   getAuth,
   setPersistence,
   browserSessionPersistence,
+  // Import the function directly for logging comparison
+  createUserWithEmailAndPassword as firebaseCreateUserDirectly,
 } from 'firebase/auth'
 
 // Use Vite's import.meta.env for environment variables
@@ -671,14 +673,61 @@ const firebaseConfig = {
 }
 
 // Initialize Firebase
+console.log(
+  '[FirebaseConfig] Initializing Firebase App with Project ID:',
+  firebaseConfig.projectId
+)
 const app = initializeApp(firebaseConfig)
 
 // Initialize Firebase services
+console.log('[FirebaseConfig] Getting Auth instance...')
 const auth = getAuth(app)
 const db = getFirestore(app)
 
+// --- Add Debugging Logs Here ---
+console.log(
+  '%c[FirebaseConfig] Created Auth Instance:',
+  'color: orange; font-weight: bold;',
+  auth
+)
+console.log(
+  '%c[FirebaseConfig] Type of created auth:',
+  'color: orange;',
+  typeof auth
+)
+console.log(
+  '%c[FirebaseConfig] Does auth.createUserWithEmailAndPassword exist *immediately* after getAuth?',
+  'color: orange;',
+  typeof auth?.createUserWithEmailAndPassword === 'function'
+)
+console.log(
+  '%c[FirebaseConfig] Does directly imported firebaseCreateUserDirectly exist?',
+  'color: orange;',
+  typeof firebaseCreateUserDirectly === 'function'
+)
+// --- End Debugging Logs ---
+
 // Set persistence for the auth
 setPersistence(auth, browserSessionPersistence)
+  .then(() => {
+    console.log(
+      '[FirebaseConfig] Auth persistence set to browserSessionPersistence.'
+    )
+  })
+  .catch((error) => {
+    console.error('[FirebaseConfig] Error setting auth persistence:', error)
+  })
+
+// Environment Logging (Moved from main.js for proximity)
+console.log(
+  `%c[APP MODE] Running in: ${import.meta.env.MODE}`,
+  'color: blue; font-weight: bold;'
+)
+if (import.meta.env.DEV) {
+  console.warn(
+    '[APP MODE] Development-specific features/bypasses might be active.'
+  )
+}
 
 export { auth, db }
 
@@ -712,16 +761,8 @@ const routes = [
     path: '/',
     component: DefaultLayout,
     children: [
-      {
-        path: '',
-        name: 'Home',
-        component: HomeView,
-      },
-      {
-        path: 'login',
-        name: 'Login',
-        component: Login,
-      },
+      { path: '', name: 'Home', component: HomeView },
+      { path: 'login', name: 'Login', component: Login },
       {
         path: 'register',
         name: 'Register',
@@ -739,18 +780,11 @@ const routes = [
     component: AuthLayout,
     meta: { requiresAuth: true },
     children: [
-      {
-        path: '',
-        name: 'Dashboard',
-        component: Dashboard,
-      },
+      { path: '', name: 'Dashboard', component: Dashboard },
+      // Add other authenticated routes here
     ],
   },
-  // Optional: Catch-all route for 404 Not Found
-  {
-    path: '/:pathMatch(.*)*',
-    redirect: '/',
-  },
+  { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
 const router = createRouter({
@@ -758,39 +792,86 @@ const router = createRouter({
   routes,
 })
 
-// Flag to ensure onAuthStateChanged is only set once
 let isAuthInitialized = false
+let unsubscribeAuth = null // Store the unsubscribe function
 
-// Navigation Guard
+// --- Helper function to check auth and decide navigation ---
+function checkAuthAndNavigate(to, requiresAuth, user, next) {
+  const isDevelopment = import.meta.env.DEV
+
+  if (requiresAuth && !user) {
+    // Route requires auth, but no user is logged in
+    if (isDevelopment) {
+      // Keep this useful dev warning
+      console.warn(
+        `%c[AuthGuard] DEV MODE: Bypassing auth check for "${to.path}".`,
+        'color: orange;'
+      )
+      next()
+    } else {
+      // Keep this production log
+      console.log(
+        `[AuthGuard] Redirecting to Login. Route "${to.path}" requires auth.`
+      )
+      next({ name: 'Login', query: { redirect: to.fullPath } })
+    }
+  } else {
+    // Route doesn't require auth OR user is logged in
+    next() // Allow navigation
+  }
+}
+
+// --- Navigation Guard ---
 router.beforeEach((to, from, next) => {
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
 
   if (!isAuthInitialized) {
-    // Pause the navigation by returning a Promise
-    return new Promise((resolve) => {
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        isAuthInitialized = true
-        unsubscribe() // Stop listening after the first event
-
-        if (requiresAuth && !user) {
-          // Redirect to Login page if not authenticated
-          next({ name: 'Login', query: { redirect: to.fullPath } })
-        } else {
-          next()
+    // First navigation: Wait for the initial auth state determination
+    // Ensure we only attach the listener once
+    if (!unsubscribeAuth) {
+      unsubscribeAuth = onAuthStateChanged(
+        auth,
+        (user) => {
+          isAuthInitialized = true
+          // Log the determined initial state *before* checking navigation
+          console.log(
+            `%c[AuthGuard] Initial state determined. User: ${
+              user ? user.email : 'Not Logged In'
+            }`,
+            user ? 'color: green;' : 'color: red;' // Style based on status
+          )
+          checkAuthAndNavigate(to, requiresAuth, user, next)
+        },
+        (error) => {
+          // Keep this important error log
+          console.error('[AuthGuard] Error getting initial auth state:', error)
+          isAuthInitialized = true // Mark as initialized even on error
+          // Log the state determined on error
+          console.log(
+            `%c[AuthGuard] Initial state determined (error). User: Not Logged In`,
+            'color: red;'
+          )
+          checkAuthAndNavigate(to, requiresAuth, null, next)
         }
-
-        resolve()
-      })
-    })
-  } else {
-    const user = auth.currentUser
-    if (requiresAuth && !user) {
-      next({ name: 'Login', query: { redirect: to.fullPath } })
-    } else {
-      next()
+      )
     }
+    // Don't call next() or log here, wait for the onAuthStateChanged callback
+  } else {
+    // Auth already initialized, check with current user
+    const user = auth.currentUser
+    // Log the current state *before* checking navigation
+    console.log(
+      `%c[AuthGuard] Navigating. Current User: ${
+        user ? user.email : 'Not Logged In'
+      }`,
+      user ? 'color: green;' : 'color: red;' // Style based on status
+    )
+    checkAuthAndNavigate(to, requiresAuth, user, next)
   }
 })
+
+// Optional: Clean up listener when app closes
+// router.afterEach(() => { ... });
 
 export default router
 
@@ -928,7 +1009,7 @@ describe('Auth Service', () => {
 // src/services/authServices.js
 
 import {
-  createUserWithEmailAndPassword as defaultCreateUserWithEmailAndPassword,
+  createUserWithEmailAndPassword as firebaseCreateUser,
   signInWithEmailAndPassword as defaultSignInWithEmailAndPassword,
   signOut as defaultSignOut,
   GoogleAuthProvider,
@@ -966,22 +1047,70 @@ export const logout = async (auth, signOutFn = defaultSignOut) => {
 }
 
 export const register = async (auth, email, password) => {
+  // --- Add/Confirm Debugging ---
+  console.log(
+    '%c[AuthService Register] Received auth object:',
+    'color: #ff00ff;',
+    auth
+  )
+  console.log(
+    '%c[AuthService Register] Type of auth object:',
+    'color: #ff00ff;',
+    typeof auth
+  )
+  console.log(
+    '%c[AuthService Register] Does auth?.createUserWithEmailAndPassword exist?',
+    'color: #ff00ff;',
+    typeof auth?.createUserWithEmailAndPassword === 'function'
+  )
+  // Also check against the directly imported function
+  console.log(
+    '%c[AuthService Register] Does firebaseCreateUser exist?',
+    'color: #ff00ff;',
+    typeof firebaseCreateUser === 'function'
+  )
+  // --- End Debugging ---
+
   try {
-    // Use auth.createUserWithEmailAndPassword so that the function can work with both real and mock auth
+    // Use the function directly from the auth object.
+    // The check below will throw if the method isn't there.
+    if (typeof auth?.createUserWithEmailAndPassword !== 'function') {
+      console.error(
+        '[AuthService Register] FATAL: auth.createUserWithEmailAndPassword is NOT a function on the received object!',
+        auth
+      )
+      throw new Error(
+        'Internal Error: createUserWithEmailAndPassword method not found on auth object.'
+      )
+    }
+
     const userCredential = await auth.createUserWithEmailAndPassword(
       email,
       password
     )
-    return userCredential
+    console.log(
+      '%c[AuthService Register] Registration successful:',
+      'color: green;',
+      userCredential.user.email
+    )
+    return userCredential // Return the whole credential object
   } catch (error) {
     if (error.code === 'auth/email-already-in-use') {
-      console.error('Error during registration:', error.message)
+      console.error(
+        '[AuthService Register] Registration Error (Email exists):',
+        error.message
+      )
       throw new Error(
         'This email is already registered. Please use another email or login.'
       )
     } else {
-      console.error('Error during registration:', error.message)
-      throw new Error('Registration failed')
+      console.error(
+        '[AuthService Register] Unexpected Registration Error:',
+        error
+      )
+      throw new Error(
+        error.message || 'Registration failed due to an unexpected error.'
+      )
     }
   }
 }
@@ -1032,7 +1161,7 @@ export const resetAuthMocks = () => {
 ───────────────────────────────────────────────
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx,vue}'],
   theme: {
     extend: {
       colors: {

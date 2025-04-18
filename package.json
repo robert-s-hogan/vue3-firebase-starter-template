@@ -6,10 +6,10 @@
   "scripts": {
     "prepare": "node check-pnpm.js",
     "dev": "pnpm vite",
-    "clean-install": "rm -rf node_modules pnpm-lock.yaml && pnpm install",
+    "clean-install": "rm -rf node_modules && rm -rf dist && rm pnpm-lock.yaml && pnpm install",
     "build": "pnpm run lint && pnpm vite build",
     "create-atomic-structure": "chmod +x ./scripts/create-atomic-structure.sh",
-    "all-files": "bash ./scripts/generate-all-files.sh",
+    "all-files": "bash ./scripts/all-files",
     "lint": "pnpm eslint .",
     "lint:fix": "pnpm eslint . --fix",
     "preview": "pnpm vite preview",
@@ -17,6 +17,7 @@
     "test:e2e": "pnpm cypress open --e2e --browser edge",
     "test:run": "pnpm cypress run --component --browser edge",
     "test:e2e:run": "pnpm cypress run --e2e --browser edge",
+    "ts-check": "tsc --noEmit",
     "preinstall": "npx only-allow pnpm",
     "prestart": "node check-pnpm.js"
   },
@@ -34,7 +35,10 @@
     "@cypress/vite-dev-server": "^5.2.0",
     "@cypress/vue": "^6.0.1",
     "@eslint/js": "^9.13.0",
+    "@types/cypress": "1.1.6",
+    "@types/sinon": "17.0.4",
     "@vitejs/plugin-vue": "^5.1.4",
+    "@vue/tsconfig": "0.7.0",
     "autoprefixer": "^10.4.20",
     "cypress": "^13.15.0",
     "eslint": "^9.13.0",
@@ -46,7 +50,9 @@
     "postcss": "^8.4.47",
     "sinon": "^19.0.2",
     "tailwindcss": "^3.4.13",
-    "vite": "^5.4.8"
+    "typescript": "5.8.3",
+    "vite": "^5.4.8",
+    "vue-tsc": "2.2.8"
   },
   "engines": {
     "pnpm": ">=9.0.0"
