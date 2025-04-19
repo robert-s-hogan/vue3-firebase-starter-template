@@ -2,6 +2,7 @@
 
 // Import Cypress commands for mounting Vue components
 import { mount } from '@cypress/vue' // Corrected import
+import Cypress from 'cypress' // Import Cypress explicitly
 
 // Make `cy.mount` available globally to all component tests
 Cypress.Commands.add('mount', mount)
@@ -13,7 +14,7 @@ import sinon from 'sinon'
 Cypress.sinon = sinon
 
 // Ignore 404 errors for favicon requests
-Cypress.on('fail', (error, runnable) => {
+Cypress.on('fail', (error, _) => {
   if (error.message.includes('favicon.png')) {
     return false
   }

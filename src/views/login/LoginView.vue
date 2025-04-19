@@ -2,7 +2,7 @@
 <template>
   <div class="flex items-center justify-center min-h-screen bg-muted">
     <div class="w-full max-w-xs">
-      <h1 class="text-2xl font-bold text-center text-primary mb-6">Login</h1>
+      <!-- <h1 class="text-2xl font-bold text-center text-primary mb-6">Login</h1> -->
       <!-- ***** 
       <form
         @submit.prevent="handleSubmit"
@@ -74,9 +74,9 @@
       <div class="text-center mt-4">
         <Button
           variant="secondary"
-          @click="handleGoogleLogin"
           class="w-full"
           :loading="isLoading"
+          @click="handleGoogleLogin"
         >
           Login with Google
         </Button>
@@ -85,44 +85,17 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { auth } from '@/firebase/firebaseConfig'
-import { login, loginWithGoogle } from '@/services/authServices'
+import { loginWithGoogle } from '@/services/authServices'
 import Button from '@/components/Atoms/BaseButton/BaseButton.vue' // Corrected path casing
 
 const router = useRouter()
-const email = ref('') // <-- Renamed ref from username to email
-const password = ref('')
+
 const loginError = ref(null) // <-- Add state for displaying errors
 const isLoading = ref(false) // <-- Add loading state
-
-const handleSubmit = async () => {
-  loginError.value = null // Clear previous errors
-  isLoading.value = true // Set loading state
-  try {
-    // Pass email.value to the login service
-    await login(auth, email.value, password.value)
-    router.push('/dashboard')
-  } catch (error) {
-    console.error('Login error:', error.message)
-    // Map common errors to user-friendly messages
-    if (error.message.includes('auth/invalid-credential')) {
-      loginError.value = 'Invalid email or password. Please try again.'
-    } else if (error.message.includes('auth/user-not-found')) {
-      // Although invalid-credential is more common now
-      loginError.value = 'No account found with this email.'
-    } else if (error.message.includes('auth/wrong-password')) {
-      // Also often covered by invalid-credential
-      loginError.value = 'Incorrect password.'
-    } else {
-      loginError.value = 'An unexpected error occurred during login.'
-    }
-  } finally {
-    isLoading.value = false // Reset loading state
-  }
-}
 
 const handleGoogleLogin = async () => {
   loginError.value = null // Clear previous errors

@@ -6,7 +6,7 @@ import {
   // loginWithGoogle is not directly used from authServices here,
   // as the original useAuth.js called the Firebase SDK directly for it.
 } from '@/services/authServices'
-import type { Auth, User, UserCredential } from 'firebase/auth'
+import type { User, UserCredential } from 'firebase/auth'
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth' // Import necessary functions/providers for Google Login
 import type { FirebaseError } from 'firebase/app'
 
@@ -24,7 +24,7 @@ export const useAuth = () => {
       const userCredential: UserCredential = await loginService(
         auth,
         email,
-        password
+        password,
       )
       const user: User = userCredential.user
       console.log('User logged in:', {
@@ -48,7 +48,7 @@ export const useAuth = () => {
       // Use the actual signInWithPopup function from Firebase Auth SDK
       const userCredential: UserCredential = await signInWithPopup(
         auth,
-        provider
+        provider,
       )
       const user: User = userCredential.user
       console.log('User logged in with Google:', {
@@ -71,7 +71,7 @@ export const useAuth = () => {
       const userCredential: UserCredential = await registerService(
         auth,
         email,
-        password
+        password,
       )
       console.log('User registered:', userCredential.user.email)
       return userCredential.user // Return the User object as before

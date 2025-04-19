@@ -1,30 +1,206 @@
 ═══════════════════════════════════════════════
-📄 FILE: ./scripts/eslint-plugin-tailwind-custom-colors.js
+📄 FILE: ./eslint.config.js
 ───────────────────────────────────────────────
-// eslint-plugin-tailwind-custom-colors.js
-export const rules = {
-  'no-non-theme-tailwind-colors': {
-    create(context) {
-      const disallowedRegex =
-        /\b(?:text|bg|border|ring|focus:ring|hover:bg|hover:border|hover:text)-(?:red|green|blue|gray|yellow|purple|pink|indigo|emerald|lime|amber|teal|cyan|fuchsia|violet)-(?:100|200|300|400|500|600|700|800|900)\b/
+// eslint.config.js
+import { defineConfig } from 'eslint/config'
+import js from '@eslint/js'
+import pluginVue from 'eslint-plugin-vue'
+import tsESLint from '@typescript-eslint/eslint-plugin'
+import tsParser from '@typescript-eslint/parser'
+import vueParser from 'vue-eslint-parser'
+import pluginPrettier from 'eslint-plugin-prettier'
+import cypressPlugin from 'eslint-plugin-cypress'
+import tailwindCustomPlugin from './scripts/eslint-plugin-tailwind-custom-colors.cjs'
 
-      return {
-        Literal(node) {
-          if (
-            typeof node.value === 'string' &&
-            disallowedRegex.test(node.value)
-          ) {
-            context.report({
-              node,
-              message:
-                'Avoid using non-theme Tailwind colors. Use theme tokens like text-error, bg-primary, etc.',
-            })
-          }
-        },
-      }
+export default defineConfig([
+  // --- Main config for JS, TS, and Vue files ---
+  {
+    // Target the primary source files
+    files: ['**/*.{js,ts,vue}'],
+
+    // Ignores apply to this specific config object's file pattern.
+    // They also help ESLint's overall ignore behavior.
+    ignores: [
+      'node_modules/**',
+      'dist/**',
+      // Keep existing ignores for config/script files from this block
+      '*.config.js',
+      '*.config.ts',
+      'scripts/**',
+      'check-pnpm.js',
+      // Add the global ignore for .d.ts files here
+      '**/*.d.ts', // <--- KEEP THIS LINE
+      // Explicitly ignore test files from *this* block, handled in their own block
+      'cypress/**',
+      'src/**/*.cy.{js,ts}',
+    ],
+
+    plugins: {
+      '@typescript-eslint': tsESLint,
+      vue: pluginVue,
+      prettier: pluginPrettier,
+      // Remove cypress plugin from here, apply only in test block
+      // cypress: cypressPlugin,
+      'tailwind-custom-colors': tailwindCustomPlugin,
+    },
+
+    languageOptions: {
+      // Use vue-eslint-parser for this block covering .vue files
+      // It will handle passing TS files to tsParser.
+      parser: vueParser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        // Tell vue-eslint-parser to use tsParser for the <script> block
+        parser: tsParser,
+        extraFileExtensions: ['.vue'],
+        // project: ['./tsconfig.json'], // Add if TS rules need type info
+        // tsconfigRootDir: __dirname, // Add if TS rules need type info
+      },
+      globals: {
+        console: 'readonly', // Console is available in most environments
+      },
+    },
+
+    settings: {
+      // Remove cypress settings from here
+      // ...cypressPlugin.configs.recommended.settings,
+    },
+
+    rules: {
+      ...js.configs.recommended.rules, // Base JS rules
+      ...pluginVue.configs['flat/recommended'].rules, // Vue recommended rules (applied to .vue files)
+      ...tsESLint.configs.recommended.rules, // Base TS rules (applied via tsParser)
+
+      // Customize unused vars rule - allow leading underscore for args/caught errors
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+      ],
+      'prettier/prettier': 'error', // Prettier integration rule
+      'tailwind-custom-colors/no-non-theme-tailwind-colors': 'warn', // Custom plugin rule
+
+      // The no-console rule allows specific console methods
+      'no-console': ['warn', { allow: ['warn', 'error', 'log'] }],
+
+      // Disable no-undef as we are explicitly defining globals where needed
+      // and relying on TS for other undefined checks in TS files.
+      'no-undef': 'off',
     },
   },
-}
+
+  // --- Special config for Cypress & Test files (js, ts) ---
+  // These files were ignored in the first block, now configured specifically.
+  {
+    files: [
+      'cypress/**/*.{js,ts}', // Cypress specific files
+      'src/**/*.cy.{js,ts}', // Component/service test files
+    ],
+    // No ignores needed here, files pattern is specific.
+    plugins: {
+      '@typescript-eslint': tsESLint, // Needed for TS test files
+      cypress: cypressPlugin, // Needed for Cypress rules and globals
+    },
+    languageOptions: {
+      // Use tsParser for TS test files (and works for JS test files)
+      parser: tsParser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        // project: ['./tsconfig.json'], // Add if TS rules in tests need type info
+        // tsconfigRootDir: __dirname, // Add if TS rules in tests need type info
+      },
+      globals: {
+        // Declare Cypress, Mocha, Chai, Sinon, and other test globals explicitly
+        Cypress: 'readonly',
+        cy: 'readonly',
+        describe: 'readonly', // Mocha global
+        it: 'readonly', // Mocha global
+        expect: 'readonly', // Chai global (used by Cypress/Mocha)
+        assert: 'readonly', // Chai global
+        before: 'readonly', // Mocha global
+        after: 'readonly', // Mocha global
+        beforeEach: 'readonly', // Mocha global
+        afterEach: 'readonly', // Mocha global
+        sinon: 'readonly', // Sinon global (seen in authServices.cy.js)
+        MouseEvent: 'readonly', // Standard DOM global used in BaseButton.cy.ts
+        console: 'readonly', // Console is also used in tests
+      },
+    },
+    settings: {
+      // Apply cypress recommended settings here for globals etc.
+      ...cypressPlugin.configs.recommended.settings,
+    },
+    rules: {
+      // Apply Cypress recommended rules
+      ...cypressPlugin.configs.recommended.rules,
+
+      // Disable the no-undef rule for test files as we define globals above
+      'no-undef': 'off',
+
+      // Disable @typescript-eslint/no-unused-expressions in test files
+      // This rule commonly flags 'expect(...)' assertions.
+      '@typescript-eslint/no-unused-expressions': 'off',
+
+      // You might want different unused var rules in tests (e.g., warn instead of error)
+      // '@typescript-eslint/no-unused-vars': 'warn', // Example: Change to warn
+    },
+  },
+
+  // --- Config for JS config/script files ---
+  // These files were ignored in the first block, now configured specifically.
+  {
+    files: ['*.config.js', '*.config.ts', 'scripts/**/*.js', 'check-pnpm.js'],
+    // No ignores needed here, files pattern is specific.
+    plugins: {
+      prettier: pluginPrettier, // If you want prettier in config files
+    },
+    languageOptions: {
+      // Explicitly *do not* use tsParser for these files, as they are plain JS or config TS
+      // Let ESLint default parser handle them or use espree implicitly.
+      parser: undefined, // Or parser: null
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module', // Use module syntax for modern config files
+      },
+      globals: {
+        // Add Node.js globals typically available in config/script files
+        __dirname: 'readonly',
+        process: 'readonly',
+        module: 'readonly',
+        require: 'readonly',
+        console: 'readonly',
+      },
+    },
+    rules: {
+      ...js.configs.recommended.rules, // Apply base JS rules
+      'prettier/prettier': 'error', // Apply Prettier rule
+
+      // Disable TS rules and no-undef as they don't apply here
+      '@typescript-eslint/no-unused-vars': 'off',
+      'no-undef': 'off', // Disable no-undef as Node globals might not be covered by base js config
+    },
+  },
+
+  // --- Specific config to handle/ignore .d.ts files ---
+  // This is a fallback block. If .d.ts files somehow aren't fully ignored
+  // by the 'ignores' in the first block and cause parsing errors, this block
+  // explicitly targets them and prevents any parser from running.
+  // --- Specific config to handle/ignore .d.ts files ---
+  // --- Specific config to handle/ignore .d.ts files ---
+  {
+    files: ['**/*.d.ts'],
+    languageOptions: {
+      parser: undefined, // Or parser: null
+    },
+    rules: {
+      // Turn off all potentially conflicting rules for these files.
+      // Since no parser runs, most rules won't apply anyway, but this is safer.
+      '@typescript-eslint/no-empty-object-type': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': 'off', // .d.ts files can have types only used locally
+      'no-undef': 'off',
+      'prettier/prettier': 'off', // Ensure prettier doesn't try to format them
 
 
 ═══════════════════════════════════════════════
@@ -36,16 +212,21 @@ export const rules = {
 
 
 ═══════════════════════════════════════════════
-📄 FILE: ./src/components/atoms/BaseAlert/BaseAlert.cy.js
+📄 FILE: ./src/components/atoms/BaseAlert/BaseAlert.cy.ts
 ───────────────────────────────────────────────
-// src/components/atoms/BaseAlert/BaseAlert.cy.js
+// src/components/atoms/BaseAlert/BaseAlert.cy.ts
 import { mount } from '@cypress/vue'
-import BaseAlert from './BaseAlert.vue'
+import BaseAlert from './BaseAlert.vue' // Assuming BaseAlert.vue is the component file
+
+// Define the possible variant types for better type safety (Optional but recommended)
+type AlertVariant = 'info' | 'success' | 'warning' | 'danger'
 
 describe('BaseAlert Component', () => {
   it('renders correctly with info variant', () => {
     mount(BaseAlert, {
-      props: { variant: 'info' },
+      props: {
+        variant: 'info' as AlertVariant, // Type assertion for clarity
+      },
       slots: {
         default: 'Info alert',
       },
@@ -56,20 +237,27 @@ describe('BaseAlert Component', () => {
   })
 
   it('renders correctly with success variant', () => {
+    // Note: There might be a typo in your original JS test: 'text-info-darkabg-success-light'
+    // Assuming it should be 'bg-success-light'
     mount(BaseAlert, {
-      props: { variant: 'success' },
+      props: {
+        variant: 'success' as AlertVariant, // Type assertion
+      },
       slots: {
         default: 'Success alert',
       },
     })
     cy.get('[role="alert"]')
-      .should('have.class', 'text-info-darkabg-success-light')
+      // Corrected class name based on assumption
+      .should('have.class', 'bg-success-light')
       .and('have.class', 'text-success-dark')
   })
 
   it('renders correctly with warning variant', () => {
     mount(BaseAlert, {
-      props: { variant: 'warning' },
+      props: {
+        variant: 'warning' as AlertVariant, // Type assertion
+      },
       slots: {
         default: 'Warning alert',
       },
@@ -81,7 +269,9 @@ describe('BaseAlert Component', () => {
 
   it('renders correctly with danger variant', () => {
     mount(BaseAlert, {
-      props: { variant: 'danger' },
+      props: {
+        variant: 'danger' as AlertVariant, // Type assertion
+      },
       slots: {
         default: 'Danger alert',
       },
@@ -94,15 +284,34 @@ describe('BaseAlert Component', () => {
 
 
 ═══════════════════════════════════════════════
-📄 FILE: ./src/components/atoms/BaseButton/BaseButton.cy.js
+📄 FILE: ./src/components/atoms/BaseButton/BaseButton.cy.ts
 ───────────────────────────────────────────────
+// src/components/atoms/BaseButton/BaseButton.cy.ts
 import { mount } from '@cypress/vue'
 import BaseButton from './BaseButton.vue' // Ensure this path is correct
+import type { DefineComponent } from 'vue'
+
+// Define the possible variant types for better type safety
+type ButtonVariant = 'primary' | 'secondary' | 'primaryOutlined'
+
+// Define the props structure for type checking when creating the props object
+// (We won't use this as a generic for mount anymore)
+interface BaseButtonProps {
+  variant?: ButtonVariant
+  loading?: boolean
+  disabled?: boolean // Added based on your component code
+  class?: string | string[] | Record<string, boolean> // Added based on your component code
+  // Add any other specific event handlers if needed, e.g., onClick?: (event: MouseEvent) => void;
+}
 
 describe('BaseButton Component', () => {
+  // Helper function to type the props object (Optional but can help)
+  const createProps = (props: BaseButtonProps) => props
+
   it('renders correctly with primary variant', () => {
     mount(BaseButton, {
-      props: { variant: 'primary' },
+      // <-- Removed <BaseButtonProps> generic
+      props: createProps({ variant: 'primary' }),
       slots: {
         default: 'Primary Button',
       },
@@ -110,11 +319,14 @@ describe('BaseButton Component', () => {
     cy.get('[data-cy="button"]')
       .should('have.class', 'bg-primary')
       .and('have.class', 'text-white')
+      .and('not.have.class', 'opacity-50') // Check it's not disabled/loading
+      .and('not.have.class', 'opacity-70')
   })
 
   it('renders correctly with secondary variant', () => {
     mount(BaseButton, {
-      props: { variant: 'secondary' },
+      // <-- Removed <BaseButtonProps> generic
+      props: createProps({ variant: 'secondary' }),
       slots: {
         default: 'Secondary Button',
       },
@@ -122,11 +334,14 @@ describe('BaseButton Component', () => {
     cy.get('[data-cy="button"]')
       .should('have.class', 'bg-secondary')
       .and('have.class', 'text-white')
+      .and('not.have.class', 'opacity-50')
+      .and('not.have.class', 'opacity-70')
   })
 
   it('renders correctly with primaryOutlined variant', () => {
     mount(BaseButton, {
-      props: { variant: 'primaryOutlined' },
+      // <-- Removed <BaseButtonProps> generic
+      props: createProps({ variant: 'primaryOutlined' }),
       slots: {
         default: 'Outlined Button',
       },
@@ -134,69 +349,178 @@ describe('BaseButton Component', () => {
     cy.get('[data-cy="button"]')
       .should('have.class', 'border')
       .and('have.class', 'text-primary')
+      .and('have.class', 'bg-white') // Check other expected classes
+      .and('not.have.class', 'opacity-50')
+      .and('not.have.class', 'opacity-70')
   })
 
-  it('displays spinner when loading is true', () => {
+  it('displays spinner and correct classes when loading is true', () => {
     mount(BaseButton, {
-      props: { loading: true, variant: 'primary' },
+      // <-- Removed <BaseButtonProps> generic
+      props: createProps({ loading: true, variant: 'primary' }),
       slots: {
-        default: 'Primary Button',
+        default: 'Primary Button', // Slot content exists even if hidden
       },
     })
-    cy.get('[data-cy="button"]').should('have.class', 'opacity-70')
-    cy.get('svg.animate-spin').should('exist')
-    cy.get('span').should('not.exist') // Text should be hidden when loading
+    cy.get('[data-cy="button"]')
+      .should('have.class', 'opacity-70')
+      .and('have.class', 'cursor-wait') // Check cursor class from your component
+      .and('be.disabled') // Check disabled attribute
+
+    cy.get('[data-cy="button"] svg.animate-spin').should('exist')
+    // The span with slot content might still be in the DOM but hidden,
+    // depending on how v-if/v-show is used. If it's truly removed by v-if:
+    // cy.get('[data-cy="button"] span').should('not.exist');
+    // If it's hidden (e.g., display: none), check visibility:
+    cy.get('[data-cy="button"] > span').should('not.be.visible') // Check direct child span specifically
+
+    // Verify spinner has text-white class (or adapt based on variant)
+    cy.get('[data-cy="button"] svg.animate-spin').should(
+      'have.class',
+      'text-white',
+    )
   })
 
-  it('emits click event when clicked', () => {
+  it('applies disabled classes and attribute when disabled is true', () => {
     mount(BaseButton, {
-      props: { loading: false },
+      // <-- Removed <BaseButtonProps> generic
+      props: createProps({ disabled: true, variant: 'primary' }),
+      slots: {
+        default: 'Disabled Button',
+      },
+    })
+    cy.get('[data-cy="button"]')
+      .should('have.class', 'opacity-50')
+      .and('have.class', 'cursor-not-allowed')
+      .and('be.disabled') // Check the disabled attribute
+
+    // Ensure spinner is NOT shown
+    cy.get('[data-cy="button"] svg.animate-spin').should('not.exist')
+    cy.get('[data-cy="button"] > span').should('be.visible')
+  })
+
+  it('emits click event when clicked and not loading/disabled', () => {
+    mount(BaseButton, {
+      // <-- Removed <BaseButtonProps> generic
+      props: createProps({ loading: false, disabled: false }),
       slots: {
         default: 'Clickable Button',
       },
     }).then(({ wrapper }) => {
-      cy.get('[data-cy="button"]')
-        .click()
-        .then(() => {
-          const emittedEvents = wrapper.emitted('click')
-          expect(emittedEvents).to.have.length(1) // Expecting exactly one click event to have been emitted
-        })
+      cy.get('[data-cy="button"]').click()
+      cy.get('[data-cy="button"]').then(() => {
+        const emittedEvents = wrapper.emitted('click')
+        expect(emittedEvents).to.exist
+        expect(emittedEvents).to.have.length(1)
+        // Check payload is an array containing the original MouseEvent
+        expect(emittedEvents?.[0]?.[0]).to.be.instanceOf(MouseEvent)
+      })
     })
+  })
+
+  it('does NOT emit click event when loading', () => {
+    mount(BaseButton, {
+      // <-- Removed <BaseButtonProps> generic
+      props: createProps({ loading: true }),
+      slots: { default: 'Loading' },
+    }).then(({ wrapper }) => {
+      // Use { force: true } because Cypress won't click disabled elements by default
+      cy.get('[data-cy="button"]').click({ force: true })
+
+      cy.get('[data-cy="button"]').then(() => {
+        expect(wrapper.emitted('click')).to.not.exist
+      })
+    })
+  })
+
+  it('does NOT emit click event when disabled', () => {
+    mount(BaseButton, {
+      // <-- Removed <BaseButtonProps> generic
+      props: createProps({ disabled: true }),
+      slots: { default: 'Disabled' },
+    }).then(({ wrapper }) => {
+      // Use { force: true } because Cypress won't click disabled elements by default
+      cy.get('[data-cy="button"]').click({ force: true })
+
+      cy.get('[data-cy="button"]').then(() => {
+        expect(wrapper.emitted('click')).to.not.exist
+      })
+    })
+  })
+
+  it('merges passed classes correctly', () => {
+    const extraClass = 'my-extra-class'
+    mount(BaseButton, {
+      // <-- Removed <BaseButtonProps> generic
+      props: createProps({ variant: 'primary', class: extraClass }),
+      slots: { default: 'Extra Class Button' },
+    })
+
+    cy.get('[data-cy="button"]')
+      .should('have.class', 'bg-primary') // Check base variant class
+      .and('have.class', extraClass) // Check merged class
   })
 })
 
 
 ═══════════════════════════════════════════════
-📄 FILE: ./src/components/atoms/BaseCard/BaseCard.cy.js
+📄 FILE: ./src/components/atoms/BaseCard/BaseCard.cy.ts
 ───────────────────────────────────────────────
-// src/components/atoms/BaseCard/BaseCard.cy.js
+// src/components/atoms/BaseCard/BaseCard.cy.ts
 
 import { mount } from '@cypress/vue'
-import BaseCard from './BaseCard.vue'
+import BaseCard from './BaseCard.vue' // Import the Vue component
 
 describe('BaseCard Component', () => {
-  it('renders card content correctly', () => {
+  it('renders card content correctly with expected styles', () => {
+    const slotContent = '<p>This is the card content</p>' // Define slot content
+
+    // Mount the component, passing the slot content
     mount(BaseCard, {
       slots: {
-        default: '<p>This is a card content</p>',
+        default: slotContent, // Use the defined variable
       },
     })
-    cy.get('div').should('have.class', 'bg-white')
-    cy.get('div').should('have.class', 'shadow-md')
-    cy.get('div').should('have.class', 'rounded')
-    cy.get('div').should('have.class', 'p-6')
-    cy.get('p').should('contain', 'This is a card content')
+
+    // Select the component's root element (assuming it's the div)
+    // Chain the class assertions for better readability
+    cy.get('div.bg-white.shadow-md.rounded.p-6') // More specific selector
+      .should('exist') // Make sure the element itself exists with these classes
+      .and('have.class', 'bg-white')
+      .and('have.class', 'shadow-md')
+      .and('have.class', 'rounded')
+      .and('have.class', 'p-6')
+      // Check the content *within* this div
+      .find('p') // Find the paragraph element within the card
+      .should('have.text', 'This is the card content') // Use have.text for exact match
+
+    /* Alternative approach: Add a data-cy attribute for robustness */
+    /*
+    // In BaseCard.vue: <div data-cy="base-card" class="bg-white ...">
+    mount(BaseCard, {
+        slots: { default: slotContent }
+    });
+
+    cy.get('[data-cy="base-card"]')
+        .should('have.class', 'bg-white')
+        .and('have.class', 'shadow-md')
+        .and('have.class', 'rounded')
+        .and('have.class', 'p-6')
+        .find('p')
+        .should('have.text', 'This is the card content');
+    */
   })
 })
 
 
 ═══════════════════════════════════════════════
-📄 FILE: ./src/components/atoms/BaseInput/BaseInput.cy.js
+📄 FILE: ./src/components/atoms/BaseInput/BaseInput.cy.ts
 ───────────────────────────────────────────────
-// src/components/atoms/BaseInput/BaseInput.cy.js
+// src/components/atoms/BaseInput/BaseInput.cy.ts
 
 import { mount } from '@cypress/vue'
 import BaseInput from './BaseInput.vue'
+import type { VueWrapper } from '@vue/test-utils' // Import VueWrapper type
 
 describe('BaseInput Component', () => {
   it('renders input with the correct type and placeholder', () => {
@@ -211,20 +535,30 @@ describe('BaseInput Component', () => {
   })
 
   it('emits the correct value on input', () => {
+    // Use a spy to easily assert emitted events
+    const onUpdateSpy = cy.spy().as('onUpdateSpy')
+
     mount(BaseInput, {
       props: {
         modelValue: '',
+        // Pass the spy as the handler for the emitted event
+        'onUpdate:modelValue': onUpdateSpy,
       },
     })
-    cy.get('input')
-      .type('Hello World')
-      .then(() => {
-        // Use Cypress lodash _ to get the last emitted value
-        const emittedValue = Cypress._.last(
-          Cypress.vueWrapper.emitted('update:modelValue')
-        )
-        cy.wrap(emittedValue).should('deep.equal', ['Hello World'])
-      })
+    // .then is not needed directly after type here, perform the action
+    cy.get('input').type('Hello World')
+
+    // After the action, assert that the spy was called correctly
+    cy.get('@onUpdateSpy').should('have.been.calledOnceWith', 'Hello World')
+
+    // Old way using wrapper.emitted (also works, but spy is often preferred for call checks)
+    // .then(({ wrapper }: { wrapper: VueWrapper<any> }) => { // Cast wrapper type if needed
+    //   cy.get('input').type('Hello World')
+    //   const emittedValue = wrapper.emitted('update:modelValue');
+    //   expect(emittedValue).to.exist;
+    //   expect(emittedValue).to.have.length(1);
+    //   expect(emittedValue?.[0]).to.deep.equal(['Hello World']);
+    // })
   })
 
   it('applies correct classes for disabled state', () => {
@@ -244,6 +578,9 @@ describe('BaseInput Component', () => {
         type: 'password',
       },
     })
+    // Note: The rule seems to apply border-error-light/focus:ring-error-light to *all* password inputs,
+    // which might not be the intended design (usually error styles are conditional).
+    // If this is intended, keep the check. If not, adjust component/test.
     cy.get('input').should('have.class', 'border-error-light')
     cy.get('input').should('have.class', 'focus:ring-error-light')
   })
@@ -251,9 +588,9 @@ describe('BaseInput Component', () => {
 
 
 ═══════════════════════════════════════════════
-📄 FILE: ./src/components/atoms/BaseLink/BaseLink.cy.js
+📄 FILE: ./src/components/atoms/BaseLink/BaseLink.cy.ts
 ───────────────────────────────────────────────
-// src/components/atoms/BaseLink/BaseLink.cy.js
+// src/components/atoms/BaseLink/BaseLink.cy.ts
 
 import { mount } from '@cypress/vue'
 import { createRouter, createWebHistory } from 'vue-router'
@@ -308,9 +645,9 @@ describe('BaseLink Component', () => {
 
 
 ═══════════════════════════════════════════════
-📄 FILE: ./src/components/atoms/BaseLoading/BaseLoading.cy.js
+📄 FILE: ./src/components/atoms/BaseLoading/BaseLoading.cy.ts
 ───────────────────────────────────────────────
-// src/components/atoms/BaseLoading/BaseLoading.cy.js
+// src/components/atoms/BaseLoading/BaseLoading.cy.ts
 
 import { mount } from '@cypress/vue'
 import BaseLoading from './BaseLoading.vue'
@@ -340,9 +677,9 @@ describe('BaseLoading Component', () => {
 
 
 ═══════════════════════════════════════════════
-📄 FILE: ./src/components/atoms/BaseModal/BaseModal.cy.js
+📄 FILE: ./src/components/atoms/BaseModal/BaseModal.cy.ts
 ───────────────────────────────────────────────
-// src/components/atoms/BaseModal.cy.js
+// src/components/atoms/BaseModal.cy.ts
 
 import { mount } from '@cypress/vue'
 import BaseModal from './BaseModal.vue'
@@ -555,71 +892,107 @@ export { default as BaseHeader } from './BaseHeader/BaseHeader.vue'
 
 
 ═══════════════════════════════════════════════
-📄 FILE: ./src/composables/useAuth.js
+📄 FILE: ./src/composables/useAuth.ts
 ───────────────────────────────────────────────
-// src/composables/useAuth.js
 import { auth } from '@/firebase/firebaseConfig'
 import {
   login as loginService,
   logout as logoutService,
   register as registerService,
-  loginWithGoogle as googleLoginService,
+  // loginWithGoogle is not directly used from authServices here,
+  // as the original useAuth.js called the Firebase SDK directly for it.
 } from '@/services/authServices'
+import type { User, UserCredential } from 'firebase/auth'
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth' // Import necessary functions/providers for Google Login
+import type { FirebaseError } from 'firebase/app'
+
+// Define the shape of the user data returned by login functions
+interface AuthUser {
+  userName: string | null
+  email: string | null
+}
 
 export const useAuth = () => {
   // General login function for email/password
-  const login = async (email, password) => {
+  const login = async (email: string, password: string): Promise<AuthUser> => {
     try {
-      const user = await loginService(auth, email, password)
+      // loginService is typed to return UserCredential in authServices.ts [cite: 56, 57]
+      const userCredential: UserCredential = await loginService(
+        auth,
+        email,
+        password,
+      )
+      const user: User = userCredential.user
       console.log('User logged in:', {
         userName: user.displayName,
         email: user.email,
       })
+      // Return the defined AuthUser shape
       return { userName: user.displayName, email: user.email }
-    } catch (error) {
-      console.error('Login failed:', error.message)
-      throw error
+    } catch (error: unknown) {
+      // Use type assertion for better error handling
+      const firebaseError = error as FirebaseError
+      console.error('Login failed:', firebaseError.message)
+      throw firebaseError // Re-throw the original typed error
     }
   }
 
   // Specific login function using signInWithPopup for Google
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = async (): Promise<AuthUser> => {
+    const provider = new GoogleAuthProvider() // Standard way to instantiate Google Provider
     try {
-      const user = await googleLoginService(auth)
+      // Use the actual signInWithPopup function from Firebase Auth SDK
+      const userCredential: UserCredential = await signInWithPopup(
+        auth,
+        provider,
+      )
+      const user: User = userCredential.user
       console.log('User logged in with Google:', {
         userName: user.displayName,
         email: user.email,
       })
+      // Return the defined AuthUser shape
       return { userName: user.displayName, email: user.email }
-    } catch (error) {
-      console.error('Google login failed:', error.message)
-      throw error
+    } catch (error: unknown) {
+      const firebaseError = error as FirebaseError
+      console.error('Google login failed:', firebaseError.message)
+      throw firebaseError // Re-throw the original typed error
     }
   }
 
   // Register function
-  const register = async (email, password) => {
+  const register = async (email: string, password: string): Promise<User> => {
     try {
-      const userCredential = await registerService(auth, email, password)
+      // registerService is typed to return UserCredential in authServices.ts [cite: 58, 59]
+      const userCredential: UserCredential = await registerService(
+        auth,
+        email,
+        password,
+      )
       console.log('User registered:', userCredential.user.email)
-      return userCredential.user
-    } catch (error) {
-      console.error('Registration failed:', error.message)
+      return userCredential.user // Return the User object as before
+    } catch (error: unknown) {
+      // Error handling logic from authServices.ts already provides a useful message [cite: 60]
+      // Log the message here, but re-throw the original error for consistency
+      console.error('Registration failed:', (error as Error).message)
       throw error
     }
   }
 
   // Logout function
-  const logout = async () => {
+  const logout = async (): Promise<void> => {
     try {
+      // logoutService is typed in authServices.ts [cite: 57]
       await logoutService(auth)
       console.log('User logged out')
-    } catch (error) {
-      console.error('Logout failed:', error.message)
-      throw error
+    } catch (error: unknown) {
+      const firebaseError = error as FirebaseError
+      console.error('Logout failed:', firebaseError.message)
+      throw firebaseError // Re-throw the original typed error
     }
   }
 
+  // Return the typed functions
   return { login, loginWithGoogle, register, logout }
 }
 
@@ -636,15 +1009,13 @@ declare module '@/firebase/firebaseConfig' {
 ═══════════════════════════════════════════════
 📄 FILE: ./src/firebase/firebaseConfig.ts
 ───────────────────────────────────────────────
-// src/firebase/firebaseConfig.js
+// src/firebase/firebaseConfig.ts
 import { initializeApp } from 'firebase/app'
 import { getFirestore } from 'firebase/firestore'
 import {
   getAuth,
   setPersistence,
   browserSessionPersistence,
-  // Import the function directly for logging comparison
-  createUserWithEmailAndPassword as firebaseCreateUserDirectly,
 } from 'firebase/auth'
 
 // Use Vite's import.meta.env for environment variables
@@ -658,62 +1029,20 @@ const firebaseConfig = {
 }
 
 // Initialize Firebase
-console.log(
-  '[FirebaseConfig] Initializing Firebase App with Project ID:',
-  firebaseConfig.projectId
-)
 const app = initializeApp(firebaseConfig)
 
 // Initialize Firebase services
-console.log('[FirebaseConfig] Getting Auth instance...')
 const auth = getAuth(app)
 const db = getFirestore(app)
 
-// --- Add Debugging Logs Here ---
-console.log(
-  '%c[FirebaseConfig] Created Auth Instance:',
-  'color: orange; font-weight: bold;',
-  auth
-)
-console.log(
-  '%c[FirebaseConfig] Type of created auth:',
-  'color: orange;',
-  typeof auth
-)
-console.log(
-  '%c[FirebaseConfig] Does auth.createUserWithEmailAndPassword exist *immediately* after getAuth?',
-  'color: orange;',
-  typeof typeof firebaseCreateUserDirectly === 'function'
-)
-console.log(
-  '%c[FirebaseConfig] Does directly imported firebaseCreateUserDirectly exist?',
-  'color: orange;',
-  typeof firebaseCreateUserDirectly === 'function'
-)
-// --- End Debugging Logs ---
-
-// Set persistence for the auth
+// Optional: set persistence
 setPersistence(auth, browserSessionPersistence)
   .then(() => {
-    console.log(
-      '[FirebaseConfig] Auth persistence set to browserSessionPersistence.'
-    )
+    console.log('[FirebaseConfig] Persistence set')
   })
-  .catch((error) => {
-    console.error('[FirebaseConfig] Error setting auth persistence:', error)
-  })
+  .catch(console.error)
 
-// Environment Logging (Moved from main.js for proximity)
-console.log(
-  `%c[APP MODE] Running in: ${import.meta.env.MODE}`,
-  'color: blue; font-weight: bold;'
-)
-if (import.meta.env.DEV) {
-  console.warn(
-    '[APP MODE] Development-specific features/bypasses might be active.'
-  )
-}
-
+// Export exactly one auth instance
 export { auth, db }
 
 
@@ -793,7 +1122,7 @@ function checkAuthAndNavigate(
   to: RouteLocationNormalized,
   requiresAuth: boolean,
   user: User | null,
-  next: NavigationGuardNext
+  next: NavigationGuardNext,
 ) {
   const isDevelopment = import.meta.env.DEV
 
@@ -801,12 +1130,12 @@ function checkAuthAndNavigate(
     if (isDevelopment) {
       console.warn(
         `%c[AuthGuard] DEV MODE: Bypassing auth check for "${to.path}".`,
-        'color: orange;'
+        'color: orange;',
       )
       next()
     } else {
       console.log(
-        `[AuthGuard] Redirecting to Login. Route "${to.path}" requires auth.`
+        `[AuthGuard] Redirecting to Login. Route "${to.path}" requires auth.`,
       )
       next({ name: 'Login', query: { redirect: to.fullPath } })
     }
@@ -829,7 +1158,7 @@ router.beforeEach((to, from, next) => {
             `%c[AuthGuard] Initial state determined. User: ${
               user ? user.email : 'Not Logged In'
             }`,
-            user ? 'color: green;' : 'color: red;'
+            user ? 'color: green;' : 'color: red;',
           )
           checkAuthAndNavigate(to, requiresAuth, user, next)
         },
@@ -838,10 +1167,10 @@ router.beforeEach((to, from, next) => {
           isAuthInitialized = true
           console.log(
             `%c[AuthGuard] Initial state determined (error). User: Not Logged In`,
-            'color: red;'
+            'color: red;',
           )
           checkAuthAndNavigate(to, requiresAuth, null, next)
-        }
+        },
       )
     }
     // Wait for onAuthStateChanged to call next()
@@ -851,7 +1180,7 @@ router.beforeEach((to, from, next) => {
       `%c[AuthGuard] Navigating. Current User: ${
         user ? user.email : 'Not Logged In'
       }`,
-      user ? 'color: green;' : 'color: red;'
+      user ? 'color: green;' : 'color: red;',
     )
     checkAuthAndNavigate(to, requiresAuth, user, next)
   }
@@ -889,7 +1218,7 @@ describe('Auth Service', () => {
           mockAuth,
           'test@example.com',
           'wrongpassword',
-          mockAuth.signInWithEmailAndPassword
+          mockAuth.signInWithEmailAndPassword,
         )
         throw new Error('Expected promise to be rejected, but it was resolved')
       } catch (error) {
@@ -905,7 +1234,7 @@ describe('Auth Service', () => {
         mockAuth,
         'test@example.com',
         'correctpassword',
-        mockAuth.signInWithEmailAndPassword
+        mockAuth.signInWithEmailAndPassword,
       )
       expect(result).to.deep.equal(mockUser)
     })
@@ -945,7 +1274,7 @@ describe('Auth Service', () => {
         throw new Error('Expected registration to fail')
       } catch (error) {
         expect(error.message).to.equal(
-          'This email is already registered. Please use another email or login.'
+          'This email is already registered. Please use another email or login.',
         )
       }
     })
@@ -957,7 +1286,7 @@ describe('Auth Service', () => {
       const userCredential = await register(
         mockAuth,
         'new-user@example.com',
-        'password123'
+        'password123',
       )
       expect(userCredential).to.equal(mockUserCredential)
     })
@@ -991,11 +1320,13 @@ describe('Auth Service', () => {
 📄 FILE: ./src/services/authServices.ts
 ───────────────────────────────────────────────
 // src/services/authServices.ts
-import type { Auth, UserCredential } from 'firebase/auth'
+import type { Auth, UserCredential, User } from 'firebase/auth'
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
+  signInWithPopup,
+  GoogleAuthProvider,
 } from 'firebase/auth'
 import type { FirebaseError } from 'firebase/app'
 
@@ -1006,9 +1337,22 @@ export const login = async (
   auth: Auth,
   email: string,
   password: string,
-  signInFn: typeof signInWithEmailAndPassword = signInWithEmailAndPassword
+  signInFn: typeof signInWithEmailAndPassword = signInWithEmailAndPassword,
 ): Promise<UserCredential> => {
   return await signInFn(auth, email, password)
+}
+
+/* ------------------------------------------------------------------ */
+/*  login with Google                                                 */
+/* ------------------------------------------------------------------ */
+export const loginWithGoogle = async (
+  auth: Auth,
+  // allow injection for testing; defaults to the real SDK fn
+  popupFn: typeof signInWithPopup = signInWithPopup,
+): Promise<User> => {
+  const provider = new GoogleAuthProvider()
+  const credential = await popupFn(auth, provider)
+  return credential.user
 }
 
 /* ------------------------------------------------------------------ */
@@ -1016,7 +1360,7 @@ export const login = async (
 /* ------------------------------------------------------------------ */
 export const logout = async (
   auth: Auth,
-  signOutFn: typeof signOut = signOut
+  signOutFn: typeof signOut = signOut,
 ): Promise<void> => {
   await signOutFn(auth)
 }
@@ -1028,7 +1372,7 @@ export const register = async (
   auth: Auth,
   email: string,
   password: string,
-  createUserFn: typeof createUserWithEmailAndPassword = createUserWithEmailAndPassword
+  createUserFn: typeof createUserWithEmailAndPassword = createUserWithEmailAndPassword,
 ): Promise<UserCredential> => {
   try {
     return await createUserFn(auth, email, password)
@@ -1071,8 +1415,10 @@ export const resetAuthMocks = () => {
 ═══════════════════════════════════════════════
 📄 FILE: ./src/shim-vue.d.ts
 ───────────────────────────────────────────────
+// src/shim-vue.d.ts
 declare module '*.vue' {
   import type { DefineComponent } from 'vue'
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-explicit-any
   const component: DefineComponent<{}, {}, any>
   export default component
 }

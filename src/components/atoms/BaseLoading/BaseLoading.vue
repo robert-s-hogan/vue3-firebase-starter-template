@@ -5,11 +5,11 @@
   >
     <div
       class="loader ease-linear rounded-full border-8 border-t-8 bg-muted h-32 w-32"
-    ></div>
+    />
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
 export default {
   name: 'BaseLoading',
 }

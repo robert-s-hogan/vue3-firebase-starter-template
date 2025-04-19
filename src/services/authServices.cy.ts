@@ -24,7 +24,7 @@ describe('Auth Service', () => {
           mockAuth,
           'test@example.com',
           'wrongpassword',
-          mockAuth.signInWithEmailAndPassword
+          mockAuth.signInWithEmailAndPassword,
         )
         throw new Error('Expected promise to be rejected, but it was resolved')
       } catch (error) {
@@ -40,7 +40,7 @@ describe('Auth Service', () => {
         mockAuth,
         'test@example.com',
         'correctpassword',
-        mockAuth.signInWithEmailAndPassword
+        mockAuth.signInWithEmailAndPassword,
       )
       expect(result).to.deep.equal(mockUser)
     })
@@ -80,7 +80,7 @@ describe('Auth Service', () => {
         throw new Error('Expected registration to fail')
       } catch (error) {
         expect(error.message).to.equal(
-          'This email is already registered. Please use another email or login.'
+          'This email is already registered. Please use another email or login.',
         )
       }
     })
@@ -92,7 +92,7 @@ describe('Auth Service', () => {
       const userCredential = await register(
         mockAuth,
         'new-user@example.com',
-        'password123'
+        'password123',
       )
       expect(userCredential).to.equal(mockUserCredential)
     })

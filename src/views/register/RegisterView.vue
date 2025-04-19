@@ -3,8 +3,8 @@
     <div class="w-full max-w-xs">
       <h1 class="text-2xl font-bold text-center text-primary mb-6">Register</h1>
       <form
-        @submit.prevent="handleRegister"
         class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
+        @submit.prevent="handleRegister"
       >
         <div class="mb-4">
           <label class="block text-primary text-sm font-bold mb-2" for="email">
@@ -12,8 +12,8 @@
           </label>
           <input
             id="email"
-            type="email"
             v-model="email"
+            type="email"
             required
             class="shadow appearance-none border rounded w-full py-2 px-3 text-primary leading-tight focus:outline-none focus:shadow-outline"
           />
@@ -27,16 +27,16 @@
           </label>
           <input
             id="password"
-            type="password"
             v-model="password"
+            type="password"
             required
             class="shadow appearance-none border rounded w-full py-2 px-3 text-primary mb-3 leading-tight focus:outline-none focus:shadow-outline"
           />
         </div>
         <div class="flex items-center justify-between">
-          <BaseButton variant="primary" type="submit" class="w-full"
-            >Register</BaseButton
-          >
+          <BaseButton variant="primary" type="submit" class="w-full">
+            Register
+          </BaseButton>
         </div>
       </form>
 
@@ -44,8 +44,8 @@
       <div class="text-center mt-4">
         <BaseButton
           variant="secondary"
-          @click="handleGoogleRegister"
           class="w-full"
+          @click="handleGoogleRegister"
         >
           Register with Google
         </BaseButton>
@@ -54,8 +54,8 @@
       <div class="text-center mt-4">
         <BaseButton
           variant="primaryOutlined"
-          @click="$router.push('/login')"
           class="w-full"
+          @click="$router.push('/login')"
         >
           Back to Login
         </BaseButton>
@@ -64,7 +64,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { auth } from '@/firebase/firebaseConfig'

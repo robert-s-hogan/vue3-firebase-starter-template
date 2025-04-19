@@ -5,8 +5,8 @@
         Reset Password
       </h1>
       <form
-        @submit.prevent="handlePasswordReset"
         class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
+        @submit.prevent="handlePasswordReset"
       >
         <div class="mb-4">
           <label class="block text-primary text-sm font-bold mb-2" for="email">
@@ -14,8 +14,8 @@
           </label>
           <input
             id="email"
-            type="email"
             v-model="email"
+            type="email"
             required
             class="shadow appearance-none border rounded w-full py-2 px-3 text-primary leading-tight focus:outline-none focus:shadow-outline"
           />
@@ -44,7 +44,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import { auth } from '@/firebase/firebaseConfig'
 import { sendPasswordResetEmail } from 'firebase/auth'

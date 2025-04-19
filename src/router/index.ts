@@ -60,7 +60,7 @@ function checkAuthAndNavigate(
   to: RouteLocationNormalized,
   requiresAuth: boolean,
   user: User | null,
-  next: NavigationGuardNext
+  next: NavigationGuardNext,
 ) {
   const isDevelopment = import.meta.env.DEV
 
@@ -68,12 +68,12 @@ function checkAuthAndNavigate(
     if (isDevelopment) {
       console.warn(
         `%c[AuthGuard] DEV MODE: Bypassing auth check for "${to.path}".`,
-        'color: orange;'
+        'color: orange;',
       )
       next()
     } else {
       console.log(
-        `[AuthGuard] Redirecting to Login. Route "${to.path}" requires auth.`
+        `[AuthGuard] Redirecting to Login. Route "${to.path}" requires auth.`,
       )
       next({ name: 'Login', query: { redirect: to.fullPath } })
     }
@@ -96,7 +96,7 @@ router.beforeEach((to, from, next) => {
             `%c[AuthGuard] Initial state determined. User: ${
               user ? user.email : 'Not Logged In'
             }`,
-            user ? 'color: green;' : 'color: red;'
+            user ? 'color: green;' : 'color: red;',
           )
           checkAuthAndNavigate(to, requiresAuth, user, next)
         },
@@ -105,10 +105,10 @@ router.beforeEach((to, from, next) => {
           isAuthInitialized = true
           console.log(
             `%c[AuthGuard] Initial state determined (error). User: Not Logged In`,
-            'color: red;'
+            'color: red;',
           )
           checkAuthAndNavigate(to, requiresAuth, null, next)
-        }
+        },
       )
     }
     // Wait for onAuthStateChanged to call next()
@@ -118,7 +118,7 @@ router.beforeEach((to, from, next) => {
       `%c[AuthGuard] Navigating. Current User: ${
         user ? user.email : 'Not Logged In'
       }`,
-      user ? 'color: green;' : 'color: red;'
+      user ? 'color: green;' : 'color: red;',
     )
     checkAuthAndNavigate(to, requiresAuth, user, next)
   }

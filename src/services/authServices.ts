@@ -1,9 +1,11 @@
 // src/services/authServices.ts
-import type { Auth, UserCredential } from 'firebase/auth'
+import type { Auth, UserCredential, User } from 'firebase/auth'
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
+  signInWithPopup,
+  GoogleAuthProvider,
 } from 'firebase/auth'
 import type { FirebaseError } from 'firebase/app'
 
@@ -14,9 +16,22 @@ export const login = async (
   auth: Auth,
   email: string,
   password: string,
-  signInFn: typeof signInWithEmailAndPassword = signInWithEmailAndPassword
+  signInFn: typeof signInWithEmailAndPassword = signInWithEmailAndPassword,
 ): Promise<UserCredential> => {
   return await signInFn(auth, email, password)
+}
+
+/* ------------------------------------------------------------------ */
+/*  login with Google                                                 */
+/* ------------------------------------------------------------------ */
+export const loginWithGoogle = async (
+  auth: Auth,
+  // allow injection for testing; defaults to the real SDK fn
+  popupFn: typeof signInWithPopup = signInWithPopup,
+): Promise<User> => {
+  const provider = new GoogleAuthProvider()
+  const credential = await popupFn(auth, provider)
+  return credential.user
 }
 
 /* ------------------------------------------------------------------ */
@@ -24,7 +39,7 @@ export const login = async (
 /* ------------------------------------------------------------------ */
 export const logout = async (
   auth: Auth,
-  signOutFn: typeof signOut = signOut
+  signOutFn: typeof signOut = signOut,
 ): Promise<void> => {
   await signOutFn(auth)
 }
@@ -36,7 +51,7 @@ export const register = async (
   auth: Auth,
   email: string,
   password: string,
-  createUserFn: typeof createUserWithEmailAndPassword = createUserWithEmailAndPassword
+  createUserFn: typeof createUserWithEmailAndPassword = createUserWithEmailAndPassword,
 ): Promise<UserCredential> => {
   try {
     return await createUserFn(auth, email, password)

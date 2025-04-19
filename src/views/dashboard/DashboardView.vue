@@ -6,7 +6,7 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import { ref, onMounted } from 'vue'
 import { auth } from '@/firebase/firebaseConfig'
 import { onAuthStateChanged } from 'firebase/auth'

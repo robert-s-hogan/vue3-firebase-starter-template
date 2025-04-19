@@ -4,13 +4,13 @@
     :type="type"
     :placeholder="placeholder"
     :value="modelValue"
-    @input="$emit('update:modelValue', $event.target.value)"
     :class="computedClass"
     :disabled="disabled"
+    @input="$emit('update:modelValue', $event.target.value)"
   />
 </template>
 
-<script>
+<script setup lang="ts">
 export default {
   name: 'BaseInput',
   props: {

@@ -6,12 +6,8 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 export default {
   name: 'HomeView',
 }
 </script>
-
-<style scoped>
-/* Additional styles if needed */
-</style>

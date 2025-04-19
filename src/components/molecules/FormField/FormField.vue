@@ -11,7 +11,7 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
 import BaseInput from '@/components/atoms/BaseInput/BaseInput.vue'
 
 export default {
@@ -45,6 +45,16 @@ export default {
       localValue: this.modelValue,
     }
   },
+
+  computed: {
+    inputProps() {
+      return {
+        type: this.type,
+        placeholder: this.placeholder,
+        disabled: this.disabled,
+      }
+    },
+  },
   watch: {
     modelValue(newValue) {
       this.localValue = newValue
@@ -55,16 +65,6 @@ export default {
       const value = event.target.value
       this.localValue = value
       this.$emit('update:modelValue', value)
-    },
-  },
-
-  computed: {
-    inputProps() {
-      return {
-        type: this.type,
-        placeholder: this.placeholder,
-        disabled: this.disabled,
-      }
     },
   },
 }

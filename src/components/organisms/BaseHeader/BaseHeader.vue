@@ -2,26 +2,26 @@
   <header class="bg-white p-4 flex justify-between items-center text-white">
     <div class="flex items-center space-x-4">
       <BaseLink to="/" class="text-lg font-bold"> Home </BaseLink>
-      <BaseNavigation :isAuthenticated="computedIsAuthenticated" />
+      <BaseNavigation :is-authenticated="computedIsAuthenticated" />
     </div>
     <!-- Show Login Button if not authenticated -->
     <BaseButton
+      v-if="!computedIsAuthenticated"
       variant="primary"
       @click="handleLogin"
-      v-if="!computedIsAuthenticated"
     >
       Login
     </BaseButton>
     <!-- Show AuthButton component with logout option if authenticated -->
     <AuthButton
-      :isAuthenticated="computedIsAuthenticated"
-      @logout="handleLogout"
       v-else
+      :is-authenticated="computedIsAuthenticated"
+      @logout="handleLogout"
     />
   </header>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
 import BaseButton from '@/components/atoms/BaseButton/BaseButton.vue'
 import BaseNavigation from '@/components/Molecules/BaseNavigation/BaseNavigation.vue'

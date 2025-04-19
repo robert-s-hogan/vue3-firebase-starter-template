@@ -1,7 +1,7 @@
 // src/components/atoms/BaseButton/BaseButton.cy.ts
 import { mount } from '@cypress/vue'
 import BaseButton from './BaseButton.vue' // Ensure this path is correct
-import type { DefineComponent } from 'vue' // Import DefineComponent type if needed for casting
+import type { DefineComponent } from 'vue'
 
 // Define the possible variant types for better type safety
 type ButtonVariant = 'primary' | 'secondary' | 'primaryOutlined'
@@ -89,7 +89,7 @@ describe('BaseButton Component', () => {
     // Verify spinner has text-white class (or adapt based on variant)
     cy.get('[data-cy="button"] svg.animate-spin').should(
       'have.class',
-      'text-white'
+      'text-white',
     )
   })
 
@@ -119,15 +119,14 @@ describe('BaseButton Component', () => {
         default: 'Clickable Button',
       },
     }).then(({ wrapper }) => {
-      cy.get('[data-cy="button"]')
-        .click()
-        .then(() => {
-          const emittedEvents = wrapper.emitted('click')
-          expect(emittedEvents).to.exist
-          expect(emittedEvents).to.have.length(1)
-          // Check payload is an array containing the original MouseEvent
-          expect(emittedEvents?.[0]?.[0]).to.be.instanceOf(MouseEvent)
-        })
+      cy.get('[data-cy="button"]').click()
+      cy.get('[data-cy="button"]').then(() => {
+        const emittedEvents = wrapper.emitted('click')
+        expect(emittedEvents).to.exist
+        expect(emittedEvents).to.have.length(1)
+        // Check payload is an array containing the original MouseEvent
+        expect(emittedEvents?.[0]?.[0]).to.be.instanceOf(MouseEvent)
+      })
     })
   })
 
@@ -138,11 +137,11 @@ describe('BaseButton Component', () => {
       slots: { default: 'Loading' },
     }).then(({ wrapper }) => {
       // Use { force: true } because Cypress won't click disabled elements by default
-      cy.get('[data-cy="button"]')
-        .click({ force: true })
-        .then(() => {
-          expect(wrapper.emitted('click')).to.not.exist
-        })
+      cy.get('[data-cy="button"]').click({ force: true })
+
+      cy.get('[data-cy="button"]').then(() => {
+        expect(wrapper.emitted('click')).to.not.exist
+      })
     })
   })
 
@@ -153,11 +152,11 @@ describe('BaseButton Component', () => {
       slots: { default: 'Disabled' },
     }).then(({ wrapper }) => {
       // Use { force: true } because Cypress won't click disabled elements by default
-      cy.get('[data-cy="button"]')
-        .click({ force: true })
-        .then(() => {
-          expect(wrapper.emitted('click')).to.not.exist
-        })
+      cy.get('[data-cy="button"]').click({ force: true })
+
+      cy.get('[data-cy="button"]').then(() => {
+        expect(wrapper.emitted('click')).to.not.exist
+      })
     })
   })
 

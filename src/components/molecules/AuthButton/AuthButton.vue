@@ -5,7 +5,7 @@
   </Button>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useRouter } from 'vue-router'
 import Button from '@/components/atoms/BaseButton/BaseButton.vue'
 import { useAuth } from '@/composables/useAuth'

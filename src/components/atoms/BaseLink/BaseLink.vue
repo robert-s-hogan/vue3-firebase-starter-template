@@ -4,11 +4,8 @@
   </router-link>
 </template>
 
-<script setup>
-const props = defineProps({
-  to: {
-    type: String,
-    required: true,
-  },
-})
+<script setup lang="ts">
+defineProps<{
+  to: string
+}>()
 </script>
