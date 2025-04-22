@@ -83,8 +83,12 @@ const handleRegister = async () => {
   try {
     await register(auth, email.value, password.value)
     router.push('/dashboard') // Redirect to dashboard on successful registration
-  } catch (err) {
-    error.value = err.message // Update UI with specific error message
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      error.value = err.message // Update UI with specific error message
+    } else {
+      error.value = 'An unknown error occurred' // Fallback for non-Error instances
+    }
   }
 }
 
@@ -97,7 +101,11 @@ const handleGoogleRegister = async () => {
     console.log('User registered with Google:', user)
     router.push('/dashboard') // Redirect to dashboard on successful registration
   } catch (err) {
-    error.value = err.message // Update UI with specific error message
+    if (err instanceof Error) {
+      error.value = err.message // Update UI with specific error message
+    } else {
+      error.value = 'An unknown error occurred' // Fallback for non-Error instances
+    }
   }
 }
 </script>

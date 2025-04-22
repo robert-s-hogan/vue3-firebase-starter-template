@@ -90,11 +90,11 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { auth } from '@/firebase/firebaseConfig'
 import { loginWithGoogle } from '@/services/authServices'
-import Button from '@/components/Atoms/BaseButton/BaseButton.vue' // Corrected path casing
+import Button from '@/components/atoms/BaseButton/BaseButton.vue' // Corrected path casing
 
 const router = useRouter()
 
-const loginError = ref(null) // <-- Add state for displaying errors
+const loginError = ref<string | null>(null) // <-- Add state for displaying errors
 const isLoading = ref(false) // <-- Add loading state
 
 const handleGoogleLogin = async () => {
@@ -104,9 +104,11 @@ const handleGoogleLogin = async () => {
     await loginWithGoogle(auth)
     router.push('/dashboard')
   } catch (error) {
-    console.error('Google login error:', error.message)
-    // Handle Google specific errors if needed, or show a generic message
-    loginError.value = 'Failed to log in with Google. Please try again.'
+    if (error instanceof Error) {
+      loginError.value = error.message // Update UI with specific error message
+    } else {
+      loginError.value = 'An unknown error occurred' // Fallback for non-Error instances
+    }
   } finally {
     isLoading.value = false
   }

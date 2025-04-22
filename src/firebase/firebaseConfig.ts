@@ -5,6 +5,7 @@ import {
   getAuth,
   setPersistence,
   browserSessionPersistence,
+  // You can still alias this if you need it for debugging:
 } from 'firebase/auth'
 
 // Use Vite's import.meta.env for environment variables

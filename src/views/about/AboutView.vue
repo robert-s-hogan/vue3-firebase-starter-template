@@ -11,7 +11,3 @@ export default {
   name: 'AboutView',
 }
 </script>
-
-<style scoped>
-/* Additional styles if needed */
-</style>

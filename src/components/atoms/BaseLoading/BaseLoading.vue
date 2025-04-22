@@ -10,9 +10,8 @@
 </template>
 
 <script setup lang="ts">
-export default {
-  name: 'BaseLoading',
-}
+// The name of the component can be set using the `defineProps` or left implicit
+// since <script setup> automatically exports the component.
 </script>
 
 <style scoped>

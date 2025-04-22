@@ -12,7 +12,11 @@ import { useAuth } from '@/composables/useAuth'
 
 const props = defineProps({
   variant: {
-    type: String,
+    type: String as () =>
+      | 'primary'
+      | 'secondary'
+      | 'primaryOutlined'
+      | undefined,
     default: 'primary',
   },
   isAuthenticated: {
@@ -34,7 +38,9 @@ const handleAuthAction = async () => {
     } else {
       // Redirect to the login page first, then log in
       await router.push('/login') // Adjust the route path if necessary
-      await login()
+      const email = 'user@example.com' // Replace with actual email input
+      const password = 'password123' // Replace with actual password input
+      await login(email, password)
       emit('login')
     }
   } catch (error) {

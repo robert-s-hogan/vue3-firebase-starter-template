@@ -14,7 +14,7 @@ import sinon from 'sinon'
 Cypress.sinon = sinon
 
 // Ignore 404 errors for favicon requests
-Cypress.on('fail', (error, _) => {
+Cypress.on('fail', (error, _runnable) => {
   if (error.message.includes('favicon.png')) {
     return false
   }

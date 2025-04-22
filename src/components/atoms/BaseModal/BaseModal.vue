@@ -17,17 +17,10 @@
 </template>
 
 <script setup lang="ts">
-export default {
-  name: 'BaseModal',
-  props: {
-    visible: {
-      type: Boolean,
-      default: false,
-    },
+defineProps({
+  visible: {
+    type: Boolean,
+    default: false,
   },
-}
+})
 </script>
-
-<style scoped>
-/* Additional styles if needed */
-</style>

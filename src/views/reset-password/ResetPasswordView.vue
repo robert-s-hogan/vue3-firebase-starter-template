@@ -62,9 +62,12 @@ const handlePasswordReset = async () => {
   try {
     await sendPasswordResetEmail(auth, email.value)
     message.value = 'Password reset link sent! Please check your email.'
-  } catch (err) {
-    console.error('Error sending password reset email:', err.message)
-    error.value = 'Failed to send password reset email. Please try again.'
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      error.value = err.message
+    } else {
+      error.value = 'An unknown error occurred.'
+    }
   }
 }
 </script>

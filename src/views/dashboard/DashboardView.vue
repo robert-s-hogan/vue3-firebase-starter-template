@@ -19,7 +19,7 @@ export default {
     onMounted(() => {
       onAuthStateChanged(auth, (user) => {
         if (user) {
-          userEmail.value = user.email
+          userEmail.value = user.email || ''
         }
       })
     })
@@ -28,7 +28,3 @@ export default {
   },
 }
 </script>
-
-<style scoped>
-/* Additional styles if needed */
-</style>

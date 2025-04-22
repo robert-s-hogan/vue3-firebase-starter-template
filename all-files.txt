@@ -520,51 +520,55 @@ describe('BaseCard Component', () => {
 
 import { mount } from '@cypress/vue'
 import BaseInput from './BaseInput.vue'
-import type { VueWrapper } from '@vue/test-utils' // Import VueWrapper type
 
 describe('BaseInput Component', () => {
+  // Define base props that are required by the component's type definition
+  // Assuming 'type' and 'disabled' are the required ones based on the error
+  const requiredBaseProps = {
+    type: 'text', // Provide a default type if required
+    disabled: false, // Provide a default disabled state if required
+    modelValue: '', // Include modelValue with a default empty string
+  }
+
   it('renders input with the correct type and placeholder', () => {
     mount(BaseInput, {
       props: {
-        type: 'text',
+        ...requiredBaseProps, // Start with the required base props
+        type: 'text', // Override type for this specific test
         placeholder: 'Enter your name',
+        // disabled: false, // Already included in requiredBaseProps default
       },
     })
     cy.get('input').should('have.attr', 'type', 'text')
     cy.get('input').should('have.attr', 'placeholder', 'Enter your name')
+    cy.get('input').should('not.be.disabled') // Also good to assert the default disabled state
   })
 
   it('emits the correct value on input', () => {
-    // Use a spy to easily assert emitted events
     const onUpdateSpy = cy.spy().as('onUpdateSpy')
 
     mount(BaseInput, {
       props: {
-        modelValue: '',
-        // Pass the spy as the handler for the emitted event
+        ...requiredBaseProps, // Include required base props
+        modelValue: '', // This test focuses on modelValue, explicitly setting it
         'onUpdate:modelValue': onUpdateSpy,
+        // type: 'text', // Already included in requiredBaseProps default
+        // disabled: false, // Already included in requiredBaseProps default
       },
     })
-    // .then is not needed directly after type here, perform the action
+
     cy.get('input').type('Hello World')
 
-    // After the action, assert that the spy was called correctly
     cy.get('@onUpdateSpy').should('have.been.calledOnceWith', 'Hello World')
-
-    // Old way using wrapper.emitted (also works, but spy is often preferred for call checks)
-    // .then(({ wrapper }: { wrapper: VueWrapper<any> }) => { // Cast wrapper type if needed
-    //   cy.get('input').type('Hello World')
-    //   const emittedValue = wrapper.emitted('update:modelValue');
-    //   expect(emittedValue).to.exist;
-    //   expect(emittedValue).to.have.length(1);
-    //   expect(emittedValue?.[0]).to.deep.equal(['Hello World']);
-    // })
   })
 
   it('applies correct classes for disabled state', () => {
     mount(BaseInput, {
       props: {
-        disabled: true,
+        ...requiredBaseProps, // Include required base props
+        disabled: true, // Override disabled for this specific test
+        // type: 'text', // Already included in requiredBaseProps default
+        // modelValue: '', // Already included in requiredBaseProps default
       },
     })
     cy.get('input').should('have.class', 'opacity-50')
@@ -575,14 +579,18 @@ describe('BaseInput Component', () => {
   it('applies correct classes for password type', () => {
     mount(BaseInput, {
       props: {
-        type: 'password',
+        ...requiredBaseProps, // Include required base props
+        type: 'password', // Override type for this specific test
+        // disabled: false, // Already included in requiredBaseProps default
+        // modelValue: '', // Already included in requiredBaseProps default
       },
     })
-    // Note: The rule seems to apply border-error-light/focus:ring-error-light to *all* password inputs,
-    // which might not be the intended design (usually error styles are conditional).
-    // If this is intended, keep the check. If not, adjust component/test.
+    // Note: Double-check if border-error-light/focus:ring-error-light
+    // is *only* for password type or password type with an error.
+    // Assuming it's just for password type based on the original test comment.
     cy.get('input').should('have.class', 'border-error-light')
     cy.get('input').should('have.class', 'focus:ring-error-light')
+    cy.get('input').should('have.attr', 'type', 'password') // Assert type is set
   })
 })
 
@@ -736,7 +744,7 @@ describe('BaseModal Component', () => {
 
 
 ═══════════════════════════════════════════════
-📄 FILE: ./src/components/atoms/index.js
+📄 FILE: ./src/components/atoms/index.ts
 ───────────────────────────────────────────────
 export { default as BaseAlert } from './BaseAlert/BaseAlert.vue'
 export { default as BaseButton } from './BaseButton/BaseButton.vue'
@@ -748,7 +756,7 @@ export { default as BaseModal } from './BaseModal/BaseModal.vue'
 
 
 ═══════════════════════════════════════════════
-📄 FILE: ./src/components/index.js
+📄 FILE: ./src/components/index.ts
 ───────────────────────────────────────────────
 export * from './atoms'
 export * from './molecules'
@@ -756,7 +764,7 @@ export * from './organisms'
 
 
 ═══════════════════════════════════════════════
-📄 FILE: ./src/components/molecules/BaseNavigation/BaseNavigation.cy.js
+📄 FILE: ./src/components/molecules/BaseNavigation/BaseNavigation.cy.ts
 ───────────────────────────────────────────────
 import { mount } from '@cypress/vue'
 import BaseNavigation from './BaseNavigation.vue'
@@ -811,7 +819,7 @@ describe('BaseNavigation Component', () => {
 
 
 ═══════════════════════════════════════════════
-📄 FILE: ./src/components/molecules/FormField/FormField.cy.js
+📄 FILE: ./src/components/molecules/FormField/FormField.cy.ts
 ───────────────────────────────────────────────
 import { mount } from '@cypress/vue'
 import FormField from './FormField.vue'
@@ -877,7 +885,7 @@ describe('FormField Component', () => {
 
 
 ═══════════════════════════════════════════════
-📄 FILE: ./src/components/molecules/index.js
+📄 FILE: ./src/components/molecules/index.ts
 ───────────────────────────────────────────────
 export { default as AuthButton } from './AuthButton/AuthButton.vue'
 export { default as BaseNavigation } from './BaseNavigation/BaseNavigation.vue'
@@ -885,7 +893,7 @@ export { default as FormField } from './FormField/FormField.vue'
 
 
 ═══════════════════════════════════════════════
-📄 FILE: ./src/components/organisms/index.js
+📄 FILE: ./src/components/organisms/index.ts
 ───────────────────────────────────────────────
 // src/components/organisms/index.js
 export { default as BaseHeader } from './BaseHeader/BaseHeader.vue'
@@ -1016,6 +1024,7 @@ import {
   getAuth,
   setPersistence,
   browserSessionPersistence,
+  // You can still alias this if you need it for debugging:
 } from 'firebase/auth'
 
 // Use Vite's import.meta.env for environment variables
@@ -1190,13 +1199,31 @@ export default router
 
 
 ═══════════════════════════════════════════════
-📄 FILE: ./src/services/authServices.cy.js
+📄 FILE: ./src/services/authServices.cy.ts
 ───────────────────────────────────────────────
+// src/services/authServices.cy.ts
 import { login, logout, register, loginWithGoogle } from './authServices'
 import sinon from 'sinon'
+// Import the Auth type from firebase/auth if you use Partial<Auth>
+// import type { Auth } from 'firebase/auth';
 
 describe('Auth Service', () => {
-  let mockAuth
+  // Define a type for your mock Auth object.
+  // No need for Partial<Auth> unless you're passing the mock to something
+  // that expects a full Auth object, which your services don't currently.
+  // Just defining the methods you stub is sufficient.
+  interface MockAuth {
+    signInWithEmailAndPassword: sinon.SinonStub
+    signOut: sinon.SinonStub
+    createUserWithEmailAndPassword: sinon.SinonStub
+    signInWithPopup: sinon.SinonStub
+    // Add any other Firebase Auth properties/methods your services might *use*
+    // (even if not stubbed in this test, the service function might try to access them)
+    // For example, if a service function used auth.currentUser, you'd add:
+    // currentUser: any; // Or a more specific User | null type
+  }
+
+  let mockAuth: MockAuth
 
   beforeEach(() => {
     // Re-create the mock object before each test
@@ -1205,37 +1232,49 @@ describe('Auth Service', () => {
       signOut: sinon.stub(),
       createUserWithEmailAndPassword: sinon.stub(),
       signInWithPopup: sinon.stub(),
+      // If adding currentUser:
+      // currentUser: null, // Or a mock user if needed
     }
   })
 
   describe('login function', () => {
     it('should handle login errors correctly', async () => {
       const errorMessage = 'Login failed'
+      // Mocking with a standard Error instance
       mockAuth.signInWithEmailAndPassword.rejects(new Error(errorMessage))
 
       try {
+        // Note: You are passing mockAuth.signInWithEmailAndPassword as the signInFn,
+        // but the function signature expects a type compatible with typeof signInWithEmailAndPassword.
+        // Sinon stubs are usually compatible enough.
         await login(
-          mockAuth,
+          mockAuth as any, // Type assertion might be needed if MockAuth is too strict
           'test@example.com',
           'wrongpassword',
-          mockAuth.signInWithEmailAndPassword,
+          mockAuth.signInWithEmailAndPassword as any, // Type assertion here too
         )
+        // If the promise *wasn't* rejected, the test should fail
         throw new Error('Expected promise to be rejected, but it was resolved')
-      } catch (error) {
-        expect(error.message).to.equal(errorMessage)
+      } catch (error: unknown) {
+        // Error is unknown
+        // Assert the error is an Error instance to access .message
+        const err = error as Error
+        expect(err.message).to.equal(errorMessage)
       }
     })
 
     it('should return user on successful login', async () => {
       const mockUser = { uid: '12345', email: 'test@example.com' }
+      // Mocking the resolved value structure { user: ... }
       mockAuth.signInWithEmailAndPassword.resolves({ user: mockUser })
 
       const result = await login(
-        mockAuth,
+        mockAuth as any, // Type assertion if needed
         'test@example.com',
         'correctpassword',
-        mockAuth.signInWithEmailAndPassword,
+        mockAuth.signInWithEmailAndPassword as any, // Type assertion if needed
       )
+      // Your login service returns credential.user, which matches mockUser
       expect(result).to.deep.equal(mockUser)
     })
   })
@@ -1244,50 +1283,68 @@ describe('Auth Service', () => {
     it('should call signOut and complete successfully', async () => {
       mockAuth.signOut.resolves()
 
-      await logout(mockAuth, mockAuth.signOut)
+      await logout(mockAuth as any, mockAuth.signOut as any) // Type assertions if needed
 
       expect(mockAuth.signOut).to.have.been.calledOnce
     })
 
     it('should handle errors during logout', async () => {
       const errorMessage = 'Logout failed'
-      mockAuth.signOut.rejects(new Error(errorMessage))
+      mockAuth.signOut.rejects(new Error(errorMessage)) // Mocking with Error instance
 
       try {
-        await logout(mockAuth, mockAuth.signOut)
+        await logout(mockAuth as any, mockAuth.signOut as any) // Type assertions if needed
         throw new Error('Expected promise to be rejected, but it was resolved')
-      } catch (error) {
-        expect(error.message).to.equal(errorMessage)
+      } catch (error: unknown) {
+        // Error is unknown
+        const err = error as Error // Assert as Error
+        expect(err.message).to.equal(errorMessage)
       }
     })
   })
 
   describe('register function', () => {
     it('should handle registration errors correctly', async () => {
+      // Mocking with an object structure that mimics FirebaseError
+      // Your register service catches this and re-throws a standard Error with a custom message
       mockAuth.createUserWithEmailAndPassword.rejects({
         code: 'auth/email-already-in-use',
         message: 'The email address is already in use.',
       })
 
       try {
-        await register(mockAuth, 'existing-email@example.com', 'password123')
+        // The register function *under test* will throw an Error('This email is already registered.')
+        await register(
+          mockAuth as any,
+          'existing-email@example.com',
+          'password123',
+          mockAuth.createUserWithEmailAndPassword as any,
+        )
         throw new Error('Expected registration to fail')
-      } catch (error) {
-        expect(error.message).to.equal(
-          'This email is already registered. Please use another email or login.',
+      } catch (error: unknown) {
+        // Error is unknown
+        // The error caught *here* is the one re-thrown by your register service, which is an Error instance
+        const err = error as Error // Assert as Error
+        expect(err.message).to.equal(
+          // Expect the specific error message your service re-throws
+          'This email is already registered.',
         )
       }
     })
 
     it('should return user on successful registration', async () => {
-      const mockUserCredential = { user: { email: 'new-user@example.com' } }
+      const mockUserCredential = {
+        user: { email: 'new-user@example.com', uid: 'abc' },
+      } // Add uid as user might have it
       mockAuth.createUserWithEmailAndPassword.resolves(mockUserCredential)
 
       const userCredential = await register(
-        mockAuth,
+        mockAuth as any, // Type assertion if needed
         'new-user@example.com',
         'password123',
+        mockAuth.createUserWithEmailAndPassword as any, // Type assertion if needed
       )
+      // Your register service returns the userCredential directly
       expect(userCredential).to.equal(mockUserCredential)
     })
   })
@@ -1295,21 +1352,29 @@ describe('Auth Service', () => {
   describe('loginWithGoogle function', () => {
     it('should handle Google login errors correctly', async () => {
       const errorMessage = 'Google login failed'
-      mockAuth.signInWithPopup.rejects(new Error(errorMessage))
+      mockAuth.signInWithPopup.rejects(new Error(errorMessage)) // Mocking with Error instance
 
       try {
-        await loginWithGoogle(mockAuth, mockAuth.signInWithPopup)
+        // The loginWithGoogle function under test returns credential.user on success,
+        // but throws the original error on failure.
+        await loginWithGoogle(mockAuth as any, mockAuth.signInWithPopup as any) // Type assertions if needed
         throw new Error('Expected promise to be rejected, but it was resolved')
-      } catch (error) {
-        expect(error.message).to.equal(errorMessage)
+      } catch (error: unknown) {
+        // Error is unknown
+        const err = error as Error // Assert as Error (or FirebaseError if you want to check .code etc.)
+        expect(err.message).to.equal(errorMessage)
       }
     })
 
     it('should return user on successful Google login', async () => {
       const mockUser = { uid: '12345', email: 'test@example.com' }
-      mockAuth.signInWithPopup.resolves({ user: mockUser })
+      mockAuth.signInWithPopup.resolves({ user: mockUser }) // Mocking resolved value structure { user: ... }
 
-      const result = await loginWithGoogle(mockAuth, mockAuth.signInWithPopup)
+      const result = await loginWithGoogle(
+        mockAuth as any,
+        mockAuth.signInWithPopup as any,
+      ) // Type assertions if needed
+      // Your loginWithGoogle service returns credential.user, which matches mockUser
       expect(result).to.deep.equal(mockUser)
     })
   })

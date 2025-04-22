@@ -25,8 +25,6 @@ export default defineConfig([
       '*.config.ts',
       'scripts/**',
       'check-pnpm.js',
-      // Add the global ignore for .d.ts files here
-      '**/*.d.ts', // <--- KEEP THIS LINE
       // Explicitly ignore test files from *this* block, handled in their own block
       'cypress/**',
       'src/**/*.cy.{js,ts}',
@@ -186,7 +184,7 @@ export default defineConfig([
   // --- Specific config to handle/ignore .d.ts files ---
   // --- Specific config to handle/ignore .d.ts files ---
   {
-    files: ['**/*.d.ts'],
+    files: ['vite-env.d.ts', '**/*.d.ts'],
     languageOptions: {
       parser: undefined, // Or parser: null
     },

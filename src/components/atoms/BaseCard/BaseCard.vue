@@ -6,11 +6,5 @@
 </template>
 
 <script setup lang="ts">
-export default {
-  name: 'BaseCard',
-}
+// The name of the component is automatically inferred from the file name.
 </script>
-
-<style scoped>
-/* Additional styles if needed */
-</style>

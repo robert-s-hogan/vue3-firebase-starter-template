@@ -1,8 +1,21 @@
 {
   "extends": "@vue/tsconfig/tsconfig.json",
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "src/**/*.d.ts"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts", // Ensure your .d.ts files are included
+    "src/**/*.vue",
+    "cypress/**/*.ts", // Include Cypress test files
+    // potentially other config/script files if they use TS features
+    "*.config.js", // VS Code TS service can check JS files too
+    "*.config.ts",
+    "vite-env.d.ts"
+  ],
   "exclude": ["node_modules", "dist"],
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "target": "esnext",
     "module": "esnext",
     "moduleResolution": "node",
@@ -13,5 +26,7 @@
     "forceConsistentCasingInFileNames": true,
     "lib": ["dom", "esnext"]
   },
-  "types": ["vite/client"]
+
+  "types": ["vite/client"],
+  "typeRoots": ["./node_modules/@types", "./src"]
 }
