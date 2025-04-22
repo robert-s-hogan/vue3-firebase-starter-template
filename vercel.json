@@ -3,11 +3,10 @@
     "env": {
       "NODE_ENV": "production",
       "NODE_VERSION": "18.x",
-      "COREPACK_ENABLE_STRICT": "0",
-      "NPM_CONFIG_IGNORE_ENGINES": "true"
+      "COREPACK_ENABLE_STRICT": "0"
     }
   },
-  "installCommand": "pnpm install --ignore-engines",
+  "installCommand": "corepack enable && corepack prepare pnpm@latest --activate && pnpm install",
   "buildCommand": "pnpm run build",
   "rewrites": [{ "source": "/(.*)", "destination": "/" }]
 }
