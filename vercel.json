@@ -5,7 +5,7 @@
       "NODE_VERSION": "18.x"
     }
   },
-  "installCommand": "corepack enable && corepack prepare pnpm@latest --activate && pnpm install",
+  "installCommand": "npm install -g pnpm@latest && pnpm install",
   "buildCommand": "pnpm run build",
   "rewrites": [{ "source": "/(.*)", "destination": "/" }]
 }
