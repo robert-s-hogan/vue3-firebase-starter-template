@@ -28,8 +28,6 @@ export default defineConfig([
       '*.config.ts',
       'scripts/**',
       'check-pnpm.js',
-      // Add the global ignore for .d.ts files here
-      '**/*.d.ts', // <--- KEEP THIS LINE
       // Explicitly ignore test files from *this* block, handled in their own block
       'cypress/**',
       'src/**/*.cy.{js,ts}',
@@ -189,7 +187,7 @@ export default defineConfig([
   // --- Specific config to handle/ignore .d.ts files ---
   // --- Specific config to handle/ignore .d.ts files ---
   {
-    files: ['**/*.d.ts'],
+    files: ['vite-env.d.ts', '**/*.d.ts'],
     languageOptions: {
       parser: undefined, // Or parser: null
     },
@@ -201,6 +199,8 @@ export default defineConfig([
       '@typescript-eslint/no-unused-vars': 'off', // .d.ts files can have types only used locally
       'no-undef': 'off',
       'prettier/prettier': 'off', // Ensure prettier doesn't try to format them
+      // You could add 'off' for other specific plugin rules if necessary
+    }, // <--- This brace closes the 'rules' object. GOOD.
 
 
 ═══════════════════════════════════════════════
