@@ -6,7 +6,7 @@
     }
   },
 
-  "installCommand": "npm install -g pnpm@latest && pnpm install",
+  "installCommand": "pnpm install -g pnpm@latest && pnpm install",
   "buildCommand": "pnpm run build",
   "rewrites": [{ "source": "/(.*)", "destination": "/" }]
 }
