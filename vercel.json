@@ -2,10 +2,11 @@
   "build": {
     "env": {
       "NODE_ENV": "production",
-      "NODE_VERSION": "18.x"
+      "NODE_VERSION": "18.x",
+      "COREPACK_ENABLE_STRICT": "0"
     }
   },
-  "installCommand": "npm install -g pnpm@^7.0.0 && pnpm install",
+  "installCommand": "pnpm install",
   "buildCommand": "pnpm run build",
   "rewrites": [{ "source": "/(.*)", "destination": "/" }]
 }
