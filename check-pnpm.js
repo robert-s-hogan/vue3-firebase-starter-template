@@ -1,5 +1,5 @@
 // check-pnpm.js
-// Added check for Vercel environment
+// Ensure this check is right at the top
 if (process.env.VERCEL === '1') {
   console.log(
     '[check-pnpm.js] Skipping pnpm check in Vercel build environment.',
@@ -15,5 +15,3 @@ if (userAgent && !userAgent.startsWith('pnpm/')) {
   )
   process.exit(1)
 }
-
-// The script will proceed if VERCEL is '1' or if userAgent starts with 'pnpm/'
