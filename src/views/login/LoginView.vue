@@ -1,4 +1,4 @@
-<!-- src/views/Login/LoginView.vue -->
+<!-- src/views/login/LoginView.vue -->
 <template>
   <div class="flex items-center justify-center min-h-screen bg-muted">
     <div class="w-full max-w-xs">

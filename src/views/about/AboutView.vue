@@ -1,4 +1,4 @@
-<!-- src/views/AboutView.vue -->
+<!-- src/views/about/AboutView.vue -->
 <template>
   <div>
     <h1 class="text-2xl font-bold mb-4">About Us</h1>
