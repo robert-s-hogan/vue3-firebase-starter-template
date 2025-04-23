@@ -7,9 +7,9 @@ import {
   type RouteLocationNormalized,
 } from 'vue-router'
 import type { User } from 'firebase/auth'
-import HomeView from '@/views/Home/HomeView.vue'
-import Login from '@/views/Login/LoginView.vue'
-import Dashboard from '@/views/Dashboard/DashboardView.vue'
+import HomeView from '@/views/home/HomeView.vue'
+import Login from '@/views/login/LoginView.vue'
+import Dashboard from '@/views/dashboard/DashboardView.vue'
 import AuthLayout from '@/layouts/auth/AuthLayout.vue'
 import DefaultLayout from '@/layouts/default/DefaultLayout.vue'
 import { auth } from '@/firebase/firebaseConfig'
@@ -25,7 +25,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'register',
         name: 'Register',
-        component: () => import('@/views/Register/RegisterView.vue'),
+        component: () => import('@/views/register/RegisterView.vue'),
       },
       {
         path: 'reset-password',
