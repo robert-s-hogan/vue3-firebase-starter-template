@@ -87,7 +87,7 @@ import { useAuth } from '@/composables/useAuth'
 import Button from '@/components/atoms/BaseButton/BaseButton.vue'
 
 const router = useRouter()
-const { login, loginWithGoogle } = useAuth() // pull in both methods :contentReference[oaicite:0]{index=0}&#8203;:contentReference[oaicite:1]{index=1}
+const { login, loginWithGoogle } = useAuth()
 
 const email = ref('')
 const password = ref('')
