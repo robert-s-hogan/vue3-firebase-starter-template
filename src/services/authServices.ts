@@ -9,9 +9,9 @@ import {
 } from 'firebase/auth'
 import type { FirebaseError } from 'firebase/app'
 
-/* ------------------------------------------------------------------ */
-/*  login                                                             */
-/* ------------------------------------------------------------------ */
+/* ------------------------------ */
+/*           login              */
+/* ------------------------------ */
 export const login = async (
   auth: Auth,
   email: string,

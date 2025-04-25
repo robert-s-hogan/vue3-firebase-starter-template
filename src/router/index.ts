@@ -3,17 +3,15 @@ import {
   createRouter,
   createWebHistory,
   type RouteRecordRaw,
-  type NavigationGuardNext,
-  type RouteLocationNormalized,
+  // type NavigationGuardNext,
+  // type RouteLocationNormalized,
 } from 'vue-router'
-import type { User } from 'firebase/auth'
 import HomeView from '@/views/home/HomeView.vue'
-import Login from '@/views/login/LoginView.vue'
-import Dashboard from '@/views/dashboard/DashboardView.vue'
+import LoginView from '@/views/login/LoginView.vue'
+import DashboardView from '@/views/dashboard/DashboardView.vue'
 import AuthLayout from '@/layouts/auth/AuthLayout.vue'
 import DefaultLayout from '@/layouts/default/DefaultLayout.vue'
-import { auth } from '@/firebase/firebaseConfig'
-import { onAuthStateChanged } from 'firebase/auth'
+import { useAuthStore } from '@/stores/authStore'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -21,7 +19,7 @@ const routes: RouteRecordRaw[] = [
     component: DefaultLayout,
     children: [
       { path: '', name: 'Home', component: HomeView },
-      { path: 'login', name: 'Login', component: Login },
+      { path: 'login', name: 'Login', component: LoginView },
       {
         path: 'register',
         name: 'Register',
@@ -39,8 +37,8 @@ const routes: RouteRecordRaw[] = [
     component: AuthLayout,
     meta: { requiresAuth: true },
     children: [
-      { path: '', name: 'Dashboard', component: Dashboard },
-      // Add other authenticated routes here
+      { path: '', name: 'Dashboard', component: DashboardView },
+      // Future protected routes can go here
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/' },
@@ -51,76 +49,30 @@ const router = createRouter({
   routes,
 })
 
-// 👇 Explicitly typed cleanup function
-let unsubscribeAuth: (() => void) | null = null
-let isAuthInitialized = false
-
-// --- Helper function to check auth and decide navigation ---
-function checkAuthAndNavigate(
-  to: RouteLocationNormalized,
-  requiresAuth: boolean,
-  user: User | null,
-  next: NavigationGuardNext,
-) {
-  const isDevelopment = import.meta.env.DEV
-
-  if (requiresAuth && !user) {
-    if (isDevelopment) {
-      console.warn(
-        `%c[AuthGuard] DEV MODE: Bypassing auth check for "${to.path}".`,
-        'color: orange;',
-      )
-      next()
-    } else {
-      console.log(
-        `[AuthGuard] Redirecting to Login. Route "${to.path}" requires auth.`,
-      )
-      next({ name: 'Login', query: { redirect: to.fullPath } })
-    }
-  } else {
-    next()
-  }
-}
-
 // --- Navigation Guard ---
 router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore()
   const requiresAuth = to.matched.some((record) => record.meta?.requiresAuth)
 
-  if (!isAuthInitialized) {
-    if (!unsubscribeAuth) {
-      unsubscribeAuth = onAuthStateChanged(
-        auth,
-        (user) => {
-          isAuthInitialized = true
-          console.log(
-            `%c[AuthGuard] Initial state determined. User: ${
-              user ? user.email : 'Not Logged In'
-            }`,
-            user ? 'color: green;' : 'color: red;',
-          )
-          checkAuthAndNavigate(to, requiresAuth, user, next)
-        },
-        (error) => {
-          console.error('[AuthGuard] Error getting initial auth state:', error)
-          isAuthInitialized = true
-          console.log(
-            `%c[AuthGuard] Initial state determined (error). User: Not Logged In`,
-            'color: red;',
-          )
-          checkAuthAndNavigate(to, requiresAuth, null, next)
-        },
-      )
-    }
-    // Wait for onAuthStateChanged to call next()
+  if (!authStore.initialized) {
+    // Wait for auth to initialize before proceeding
+    const unwatch = authStore.$subscribe(() => {
+      if (authStore.initialized) {
+        unwatch()
+        proceed()
+      }
+    })
   } else {
-    const user = auth.currentUser
-    console.log(
-      `%c[AuthGuard] Navigating. Current User: ${
-        user ? user.email : 'Not Logged In'
-      }`,
-      user ? 'color: green;' : 'color: red;',
-    )
-    checkAuthAndNavigate(to, requiresAuth, user, next)
+    proceed()
+  }
+
+  function proceed() {
+    if (requiresAuth && !authStore.isAuthenticated) {
+      console.log('[AuthGuard] No authenticated user. Redirecting to Login...')
+      next({ name: 'Login', query: { redirect: to.fullPath } })
+    } else {
+      next()
+    }
   }
 })
 

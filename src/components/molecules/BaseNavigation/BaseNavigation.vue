@@ -1,15 +1,16 @@
 <template>
   <nav class="space-x-4">
-    <BaseLink v-if="isAuthenticated" to="/dashboard" class="text-black">
-      Dashboard
-    </BaseLink>
-    <!-- Additional links can be added here -->
+    <!-- only show if store says we're authenticated -->
+    <BaseLink v-if="isAuthenticated" to="/dashboard"> Dashboard </BaseLink>
   </nav>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useAuthStore } from '@/stores/authStore'
 import BaseLink from '@/components/atoms/BaseLink/BaseLink.vue'
-defineProps<{
-  isAuthenticated: boolean
-}>()
+
+// pull reactive auth state from Pinia store
+const authStore = useAuthStore()
+const isAuthenticated = computed(() => authStore.isAuthenticated)
 </script>
