@@ -1,5 +1,8 @@
+<!-- src/views/login/LoginView.vue -->
 <template>
-  <form @submit.prevent="onSubmit" class="space-y-4">
+  <BaseLoading v-if="loading" />
+
+  <form v-else @submit.prevent="onSubmit" class="space-y-4">
     <FormField
       id="email"
       label="Email"
@@ -22,6 +25,7 @@
       variant="primary"
       :loading="loading"
       class="w-full"
+      data-cy="login-button"
     >
       Login
     </BaseButton>
@@ -32,6 +36,7 @@
       @click="onGoogleLogin"
       :loading="loading"
       class="w-full"
+      data-cy="google-button"
     >
       Continue with Google
     </BaseButton>
@@ -43,6 +48,7 @@ import { ref } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import FormField from '@/components/molecules/FormField/FormField.vue'
 import BaseButton from '@/components/atoms/BaseButton/BaseButton.vue'
+import BaseLoading from '@/components/atoms/BaseLoading/BaseLoading.vue'
 
 const { login, loginWithGoogle, loading } = useAuth()
 

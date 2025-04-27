@@ -4,25 +4,7 @@
     class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
   >
     <div
-      class="loader ease-linear rounded-full border-8 border-t-8 bg-muted h-32 w-32"
-    />
+      class="animate-spin h-32 w-32 rounded-full border-8 border-muted border-t-info"
+    ></div>
   </div>
 </template>
-
-<script setup lang="ts">
-// The name of the component can be set using the `defineProps` or left implicit
-// since <script setup> automatically exports the component.
-</script>
-
-<style scoped>
-.loader {
-  border-top-color: #3498db;
-  animation: spin 1s infinite linear;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-</style>

@@ -1322,6 +1322,7 @@ import {
   login as loginService,
   register as registerService,
   logout as logoutService,
+  loginWithGoogle as googleService,
 } from '@/services/authServices'
 import type { FirebaseError } from 'firebase/app'
 import { addToast } from './useToast'
@@ -1344,9 +1345,24 @@ export function useAuth() {
       addToast('Welcome back!', 'success')
       return router.push({ name: 'Dashboard' })
     } catch (err: unknown) {
-      const e = err as FirebaseError
-      const msg = firebaseMessages[e.code] || 'Login failed. Please try again.'
+      const msg =
+        firebaseMessages[(err as FirebaseError).code] ?? 'Something went wrong'
       addToast(msg, 'error')
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function loginWithGoogle() {
+    loading.value = true
+    try {
+      const user = await googleService(auth)
+      addToast(`Welcome, ${user.email}!`, 'success')
+      return router.push({ name: 'Dashboard' })
+    } catch (err: unknown) {
+      const e = err as FirebaseError
+      addToast(e.message || 'Google login failed.', 'error')
       throw e
     } finally {
       loading.value = false
@@ -1360,11 +1376,10 @@ export function useAuth() {
       addToast('Registration successful!', 'success')
       return router.push({ name: 'Dashboard' })
     } catch (err: unknown) {
-      const e = err as FirebaseError
       const msg =
-        firebaseMessages[e.code] || 'Registration failed. Please try again.'
+        firebaseMessages[(err as FirebaseError).code] ?? 'Something went wrong'
       addToast(msg, 'error')
-      throw e
+      throw err
     } finally {
       loading.value = false
     }
@@ -1377,14 +1392,54 @@ export function useAuth() {
       addToast('You have been logged out.', 'info')
       return router.push({ name: 'Home' })
     } catch (err: unknown) {
-      addToast('Logout failed. Please try again.', 'error')
+      const msg =
+        firebaseMessages[(err as FirebaseError).code] ?? 'Something went wrong'
+      addToast(msg, 'error')
       throw err
     } finally {
       loading.value = false
     }
   }
 
-  return { login, register, logout, loading }
+  return { login, loginWithGoogle, register, logout, loading }
+}
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/composables/usePasswordReset.ts
+───────────────────────────────────────────────
+import { ref } from 'vue'
+import { sendPasswordResetEmail } from 'firebase/auth'
+import { auth } from '@/firebase/firebaseConfig'
+import { addToast } from './useToast'
+import type { FirebaseError } from 'firebase/app'
+
+const firebaseMessages: Record<string, string> = {
+  'auth/email-already-in-use': 'This email is already registered.',
+  'auth/wrong-password': 'Incorrect password. Please try again.',
+  'auth/user-not-found': 'No account found with that email.',
+  // …etc
+}
+
+export function usePasswordReset() {
+  const loading = ref(false)
+
+  async function reset(email: string) {
+    loading.value = true
+    try {
+      await sendPasswordResetEmail(auth, email)
+      addToast('Check your inbox for reset instructions.', 'success')
+    } catch (err: unknown) {
+      const msg =
+        firebaseMessages[(err as FirebaseError).code] ?? 'Something went wrong'
+      addToast(msg, 'error')
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  return { reset, loading }
 }
 
 
@@ -1487,6 +1542,14 @@ import {
   logout as logoutService,
 } from '@/services/authServices'
 import type { FirebaseError } from 'firebase/app'
+import { addToast } from '@/composables/useToast'
+
+const firebaseMessages: Record<string, string> = {
+  'auth/email-already-in-use': 'This email is already registered.',
+  'auth/wrong-password': 'Incorrect password. Please try again.',
+  'auth/user-not-found': 'No account found with that email.',
+  // …etc
+}
 
 export const useAuth = () => {
   const router = useRouter()
@@ -1496,8 +1559,10 @@ export const useAuth = () => {
       await loginService(auth, email, password)
       router.push({ name: 'Dashboard' }) // redirect after login
     } catch (err: unknown) {
-      const e = err as FirebaseError
-      throw new Error(e.message) // bubble up
+      const msg =
+        firebaseMessages[(err as FirebaseError).code] ?? 'Something went wrong'
+      addToast(msg, 'error')
+      throw err
     }
   }
 
@@ -1506,8 +1571,10 @@ export const useAuth = () => {
       await googleService(auth)
       router.push({ name: 'Dashboard' })
     } catch (err: unknown) {
-      const e = err as FirebaseError
-      throw new Error(e.message)
+      const msg =
+        firebaseMessages[(err as FirebaseError).code] ?? 'Something went wrong'
+      addToast(msg, 'error')
+      throw err
     }
   }
 
@@ -1521,8 +1588,10 @@ export const useAuth = () => {
       await logoutService(auth)
       router.push({ name: 'Home' })
     } catch (err: unknown) {
-      const e = err as FirebaseError
-      throw new Error(e.message)
+      const msg =
+        firebaseMessages[(err as FirebaseError).code] ?? 'Something went wrong'
+      addToast(msg, 'error')
+      throw err
     }
   }
 
@@ -1641,6 +1710,15 @@ import { login, logout, register, loginWithGoogle } from './authServices'
 import sinon from 'sinon'
 // Import the Auth type from firebase/auth if you use Partial<Auth>
 // import type { Auth } from 'firebase/auth';
+import type { FirebaseError } from 'firebase/app'
+import { addToast } from '@/composables/useToast'
+
+const firebaseMessages: Record<string, string> = {
+  'auth/email-already-in-use': 'This email is already registered.',
+  'auth/wrong-password': 'Incorrect password. Please try again.',
+  'auth/user-not-found': 'No account found with that email.',
+  // …etc
+}
 
 describe('Auth Service', () => {
   // Define a type for your mock Auth object.
@@ -1690,11 +1768,12 @@ describe('Auth Service', () => {
         )
         // If the promise *wasn't* rejected, the test should fail
         throw new Error('Expected promise to be rejected, but it was resolved')
-      } catch (error: unknown) {
-        // Error is unknown
-        // Assert the error is an Error instance to access .message
-        const err = error as Error
-        expect(err.message).to.equal(errorMessage)
+      } catch (err: unknown) {
+        const msg =
+          firebaseMessages[(err as FirebaseError).code] ??
+          'Something went wrong'
+        addToast(msg, 'error')
+        throw err
       }
     })
 
@@ -1730,10 +1809,12 @@ describe('Auth Service', () => {
       try {
         await logout(mockAuth as any, mockAuth.signOut as any) // Type assertions if needed
         throw new Error('Expected promise to be rejected, but it was resolved')
-      } catch (error: unknown) {
-        // Error is unknown
-        const err = error as Error // Assert as Error
-        expect(err.message).to.equal(errorMessage)
+      } catch (err: unknown) {
+        const msg =
+          firebaseMessages[(err as FirebaseError).code] ??
+          'Something went wrong'
+        addToast(msg, 'error')
+        throw err
       }
     })
   })
@@ -1756,14 +1837,12 @@ describe('Auth Service', () => {
           mockAuth.createUserWithEmailAndPassword as any,
         )
         throw new Error('Expected registration to fail')
-      } catch (error: unknown) {
-        // Error is unknown
-        // The error caught *here* is the one re-thrown by your register service, which is an Error instance
-        const err = error as Error // Assert as Error
-        expect(err.message).to.equal(
-          // Expect the specific error message your service re-throws
-          'This email is already registered.',
-        )
+      } catch (err: unknown) {
+        const msg =
+          firebaseMessages[(err as FirebaseError).code] ??
+          'Something went wrong'
+        addToast(msg, 'error')
+        throw err
       }
     })
 
@@ -1794,10 +1873,12 @@ describe('Auth Service', () => {
         // but throws the original error on failure.
         await loginWithGoogle(mockAuth as any, mockAuth.signInWithPopup as any) // Type assertions if needed
         throw new Error('Expected promise to be rejected, but it was resolved')
-      } catch (error: unknown) {
-        // Error is unknown
-        const err = error as Error // Assert as Error (or FirebaseError if you want to check .code etc.)
-        expect(err.message).to.equal(errorMessage)
+      } catch (err: unknown) {
+        const msg =
+          firebaseMessages[(err as FirebaseError).code] ??
+          'Something went wrong'
+        addToast(msg, 'error')
+        throw err
       }
     })
 
@@ -1829,6 +1910,14 @@ import {
   GoogleAuthProvider,
 } from 'firebase/auth'
 import type { FirebaseError } from 'firebase/app'
+import { addToast } from '@/composables/useToast'
+
+const firebaseMessages: Record<string, string> = {
+  'auth/email-already-in-use': 'This email is already registered.',
+  'auth/wrong-password': 'Incorrect password. Please try again.',
+  'auth/user-not-found': 'No account found with that email.',
+  // …etc
+}
 
 /* ------------------------------ */
 /*           login              */
@@ -1877,14 +1966,10 @@ export const register = async (
   try {
     return await createUserFn(auth, email, password)
   } catch (err: unknown) {
-    if (err && typeof err === 'object' && 'code' in err) {
-      const firebaseError = err as FirebaseError
-      if (firebaseError.code === 'auth/email-already-in-use') {
-        throw new Error('This email is already registered.')
-      }
-      throw new Error(firebaseError.message)
-    }
-    throw new Error('Registration failed due to an unexpected error.')
+    const msg =
+      firebaseMessages[(err as FirebaseError).code] ?? 'Something went wrong'
+    addToast(msg, 'error')
+    throw err
   }
 }
 
