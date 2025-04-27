@@ -1,12 +1,12 @@
 <template>
-  <div>
+  <div class="min-h-screen flex flex-col bg-background">
     <Header />
-    <main>
+    <main class="flex-1 flex items-center justify-center">
       <router-view />
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import Header from '@/components/organisms//BaseHeader/BaseHeader.vue'
+import Header from '@/components/organisms/BaseHeader/BaseHeader.vue'
 </script>

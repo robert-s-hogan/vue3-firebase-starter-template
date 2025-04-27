@@ -84,11 +84,10 @@ const handleRegister = async () => {
     await register(auth, email.value, password.value)
     router.push('/dashboard') // Redirect to dashboard on successful registration
   } catch (err: unknown) {
-    if (err instanceof Error) {
-      error.value = err.message // Update UI with specific error message
-    } else {
-      error.value = 'An unknown error occurred' // Fallback for non-Error instances
-    }
+    const msg =
+      firebaseMessages[(err as FirebaseError).code] ?? 'Something went wrong'
+    addToast(msg, 'error')
+    throw err
   }
 }
 
@@ -100,12 +99,11 @@ const handleGoogleRegister = async () => {
     const user = await loginWithGoogle(auth)
     console.log('User registered with Google:', user)
     router.push('/dashboard') // Redirect to dashboard on successful registration
-  } catch (err) {
-    if (err instanceof Error) {
-      error.value = err.message // Update UI with specific error message
-    } else {
-      error.value = 'An unknown error occurred' // Fallback for non-Error instances
-    }
+  } catch (err: unknown) {
+    const msg =
+      firebaseMessages[(err as FirebaseError).code] ?? 'Something went wrong'
+    addToast(msg, 'error')
+    throw err
   }
 }
 </script>

@@ -8,6 +8,14 @@ import {
   logout as logoutService,
 } from '@/services/authServices'
 import type { FirebaseError } from 'firebase/app'
+import { addToast } from '@/composables/useToast'
+
+const firebaseMessages: Record<string, string> = {
+  'auth/email-already-in-use': 'This email is already registered.',
+  'auth/wrong-password': 'Incorrect password. Please try again.',
+  'auth/user-not-found': 'No account found with that email.',
+  // …etc
+}
 
 export const useAuth = () => {
   const router = useRouter()
@@ -17,8 +25,10 @@ export const useAuth = () => {
       await loginService(auth, email, password)
       router.push({ name: 'Dashboard' }) // redirect after login
     } catch (err: unknown) {
-      const e = err as FirebaseError
-      throw new Error(e.message) // bubble up
+      const msg =
+        firebaseMessages[(err as FirebaseError).code] ?? 'Something went wrong'
+      addToast(msg, 'error')
+      throw err
     }
   }
 
@@ -27,8 +37,10 @@ export const useAuth = () => {
       await googleService(auth)
       router.push({ name: 'Dashboard' })
     } catch (err: unknown) {
-      const e = err as FirebaseError
-      throw new Error(e.message)
+      const msg =
+        firebaseMessages[(err as FirebaseError).code] ?? 'Something went wrong'
+      addToast(msg, 'error')
+      throw err
     }
   }
 
@@ -42,8 +54,10 @@ export const useAuth = () => {
       await logoutService(auth)
       router.push({ name: 'Home' })
     } catch (err: unknown) {
-      const e = err as FirebaseError
-      throw new Error(e.message)
+      const msg =
+        firebaseMessages[(err as FirebaseError).code] ?? 'Something went wrong'
+      addToast(msg, 'error')
+      throw err
     }
   }
 

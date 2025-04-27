@@ -3,6 +3,15 @@ import { login, logout, register, loginWithGoogle } from './authServices'
 import sinon from 'sinon'
 // Import the Auth type from firebase/auth if you use Partial<Auth>
 // import type { Auth } from 'firebase/auth';
+import type { FirebaseError } from 'firebase/app'
+import { addToast } from '@/composables/useToast'
+
+const firebaseMessages: Record<string, string> = {
+  'auth/email-already-in-use': 'This email is already registered.',
+  'auth/wrong-password': 'Incorrect password. Please try again.',
+  'auth/user-not-found': 'No account found with that email.',
+  // …etc
+}
 
 describe('Auth Service', () => {
   // Define a type for your mock Auth object.
@@ -52,11 +61,12 @@ describe('Auth Service', () => {
         )
         // If the promise *wasn't* rejected, the test should fail
         throw new Error('Expected promise to be rejected, but it was resolved')
-      } catch (error: unknown) {
-        // Error is unknown
-        // Assert the error is an Error instance to access .message
-        const err = error as Error
-        expect(err.message).to.equal(errorMessage)
+      } catch (err: unknown) {
+        const msg =
+          firebaseMessages[(err as FirebaseError).code] ??
+          'Something went wrong'
+        addToast(msg, 'error')
+        throw err
       }
     })
 
@@ -92,10 +102,12 @@ describe('Auth Service', () => {
       try {
         await logout(mockAuth as any, mockAuth.signOut as any) // Type assertions if needed
         throw new Error('Expected promise to be rejected, but it was resolved')
-      } catch (error: unknown) {
-        // Error is unknown
-        const err = error as Error // Assert as Error
-        expect(err.message).to.equal(errorMessage)
+      } catch (err: unknown) {
+        const msg =
+          firebaseMessages[(err as FirebaseError).code] ??
+          'Something went wrong'
+        addToast(msg, 'error')
+        throw err
       }
     })
   })
@@ -118,14 +130,12 @@ describe('Auth Service', () => {
           mockAuth.createUserWithEmailAndPassword as any,
         )
         throw new Error('Expected registration to fail')
-      } catch (error: unknown) {
-        // Error is unknown
-        // The error caught *here* is the one re-thrown by your register service, which is an Error instance
-        const err = error as Error // Assert as Error
-        expect(err.message).to.equal(
-          // Expect the specific error message your service re-throws
-          'This email is already registered.',
-        )
+      } catch (err: unknown) {
+        const msg =
+          firebaseMessages[(err as FirebaseError).code] ??
+          'Something went wrong'
+        addToast(msg, 'error')
+        throw err
       }
     })
 
@@ -156,10 +166,12 @@ describe('Auth Service', () => {
         // but throws the original error on failure.
         await loginWithGoogle(mockAuth as any, mockAuth.signInWithPopup as any) // Type assertions if needed
         throw new Error('Expected promise to be rejected, but it was resolved')
-      } catch (error: unknown) {
-        // Error is unknown
-        const err = error as Error // Assert as Error (or FirebaseError if you want to check .code etc.)
-        expect(err.message).to.equal(errorMessage)
+      } catch (err: unknown) {
+        const msg =
+          firebaseMessages[(err as FirebaseError).code] ??
+          'Something went wrong'
+        addToast(msg, 'error')
+        throw err
       }
     })
 

@@ -8,6 +8,14 @@ import {
   GoogleAuthProvider,
 } from 'firebase/auth'
 import type { FirebaseError } from 'firebase/app'
+import { addToast } from '@/composables/useToast'
+
+const firebaseMessages: Record<string, string> = {
+  'auth/email-already-in-use': 'This email is already registered.',
+  'auth/wrong-password': 'Incorrect password. Please try again.',
+  'auth/user-not-found': 'No account found with that email.',
+  // …etc
+}
 
 /* ------------------------------ */
 /*           login              */
@@ -56,13 +64,9 @@ export const register = async (
   try {
     return await createUserFn(auth, email, password)
   } catch (err: unknown) {
-    if (err && typeof err === 'object' && 'code' in err) {
-      const firebaseError = err as FirebaseError
-      if (firebaseError.code === 'auth/email-already-in-use') {
-        throw new Error('This email is already registered.')
-      }
-      throw new Error(firebaseError.message)
-    }
-    throw new Error('Registration failed due to an unexpected error.')
+    const msg =
+      firebaseMessages[(err as FirebaseError).code] ?? 'Something went wrong'
+    addToast(msg, 'error')
+    throw err
   }
 }

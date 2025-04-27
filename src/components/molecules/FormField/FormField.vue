@@ -4,68 +4,61 @@
     <label :for="id" class="block text-primary mb-2">{{ label }}</label>
     <BaseInput
       :id="id"
-      v-bind="inputProps"
-      :value="localValue"
-      @input="updateValue"
+      v-model="localValue"
+      :type="type"
+      :placeholder="placeholder"
+      :disabled="disabled"
+      :class="error ? 'border-error-light focus:ring-error-light' : ''"
+      data-cy="form-input"
     />
+    <p v-if="error" class="mt-1 text-error text-sm" data-cy="form-error">
+      {{ error }}
+    </p>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import BaseInput from '@/components/atoms/BaseInput/BaseInput.vue'
 
-export default {
-  name: 'FormField',
-  components: { BaseInput },
-  props: {
-    id: {
-      type: String,
-      required: true,
-    },
-    label: {
-      type: String,
-      required: true,
-    },
-    modelValue: [String, Number],
-    type: {
-      type: String,
-      default: 'text',
-    },
-    placeholder: {
-      type: String,
-      default: '',
-    },
-    disabled: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  data() {
-    return {
-      localValue: this.modelValue,
-    }
-  },
-
-  computed: {
-    inputProps() {
-      return {
-        type: this.type,
-        placeholder: this.placeholder,
-        disabled: this.disabled,
-      }
-    },
-  },
-  watch: {
-    modelValue(newValue) {
-      this.localValue = newValue
-    },
-  },
-  methods: {
-    updateValue(event) {
-      const value = event.target.value
-      this.localValue = value
-      this.$emit('update:modelValue', value)
-    },
-  },
+interface Props {
+  id: string
+  label: string
+  modelValue: string | number
+  type?: string
+  placeholder?: string
+  disabled?: boolean
+  error?: string
 }
+
+const props = defineProps<Props>()
+const emit = defineEmits<{
+  (e: 'update:modelValue', val: string | number): void
+}>()
+
+const {
+  id,
+  label,
+  modelValue,
+  type = 'text',
+  placeholder = '',
+  disabled = false,
+  error,
+} = props
+
+const localValue = ref<string | number>(modelValue)
+
+// emit outward whenever localValue changes
+watch(localValue, (val) => {
+  emit('update:modelValue', val)
+})
+// keep localValue in sync if parent modelValue changes
+watch(
+  () => props.modelValue,
+  (val) => {
+    localValue.value = val
+  },
+)
 </script>
+
+<style scoped></style>

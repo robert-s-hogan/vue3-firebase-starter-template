@@ -7,10 +7,13 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
-      '@/components': path.resolve(__dirname, 'src/components'),
       '@/assets': path.resolve(__dirname, 'src/assets'),
+      '@/atoms': path.resolve(__dirname, 'src/components/atoms'),
+      '@/components': path.resolve(__dirname, 'src/components'),
       '@/composables': path.resolve(__dirname, 'src/composables'),
       '@/firebase': path.resolve(__dirname, 'src/firebase'),
+      '@/molecules': path.resolve(__dirname, 'src/components/molecules'),
+      '@/organisms': path.resolve(__dirname, 'src/components/organisms'),
       '@/layouts': path.resolve(__dirname, 'src/layouts'),
       '@/services': path.resolve(__dirname, 'src/services'),
       '@/stores': path.resolve(__dirname, 'src/stores'),

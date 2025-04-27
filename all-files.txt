@@ -930,6 +930,38 @@ export { default as BaseInput } from './BaseInput/BaseInput.vue'
 export { default as BaseLink } from './BaseLink/BaseLink.vue'
 export { default as BaseLoading } from './BaseLoading/BaseLoading.vue'
 export { default as BaseModal } from './BaseModal/BaseModal.vue'
+export { default as ToastIcon } from './ToastIcon/ToastIcon.vue'
+export { default as ToastMessage } from './ToastMessage/ToastMessage.vue'
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/components/atoms/ToastIcon/ToastIcon.cy.ts
+───────────────────────────────────────────────
+// src/components/atoms/ToastIcon/ToastIcon.cy.ts
+import { mount } from '@cypress/vue'
+import ToastIcon from './ToastIcon.vue'
+describe('ToastIcon', () => {
+  it('emits close when clicked', () => {
+    const onClose = cy.spy().as('onClose')
+    mount(ToastIcon, { props: { onClose } })
+    cy.get('button').click()
+    cy.get('@onClose').should('have.been.called')
+  })
+})
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/components/atoms/ToastMessage/ToastMessage.cy.ts
+───────────────────────────────────────────────
+// src/components/atoms/ToastMessage/ToastMessage.cy.ts
+import { mount } from '@cypress/vue'
+import ToastMessage from './ToastMessage.vue'
+describe('ToastMessage', () => {
+  it('renders slot content', () => {
+    mount(ToastMessage, { slots: { default: 'Hello Toast' } })
+    cy.get('[data-cy="toast-message"]').should('have.text', 'Hello Toast')
+  })
+})
 
 
 ═══════════════════════════════════════════════
@@ -1115,6 +1147,7 @@ describe('FormStep', () => {
 export { default as AuthButton } from './AuthButton/AuthButton.vue'
 export { default as BaseNavigation } from './BaseNavigation/BaseNavigation.vue'
 export { default as FormField } from './FormField/FormField.vue'
+export { default as Toast } from './Toast/Toast.vue'
 
 
 ═══════════════════════════════════════════════
@@ -1132,6 +1165,38 @@ describe('ProgressIndicator', () => {
       'style',
       'width: 40%;',
     )
+  })
+})
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/components/molecules/Toast/Toast.cy.ts
+───────────────────────────────────────────────
+// src/components/molecules/Toast/Toast.cy.ts
+import { mount } from '@cypress/vue'
+import Toast from './Toast.vue'
+describe('Toast', () => {
+  it('renders with default variant and handles close', () => {
+    const onClose = cy.spy().as('onClose')
+    mount(Toast, {
+      props: { onClose },
+      slots: { default: 'Info occurred' },
+    })
+    cy.get('[role=alert]')
+      .should('have.class', 'bg-info-light')
+      .and('have.class', 'text-info-dark')
+    cy.get('[data-cy="toast-message"]').should('have.text', 'Info occurred')
+    cy.get('button').click()
+    cy.get('@onClose').should('have.been.called')
+  })
+  it('applies error variant classes', () => {
+    mount(Toast, {
+      props: { variant: 'error' },
+      slots: { default: 'Error happened' },
+    })
+    cy.get('[role=alert]')
+      .should('have.class', 'bg-error-light')
+      .and('have.class', 'text-error-dark')
   })
 })
 
@@ -1179,7 +1244,10 @@ describe('BaseHeader', () => {
 📄 FILE: ./src/components/organisms/index.ts
 ───────────────────────────────────────────────
 // src/components/organisms/index.js
+export { default as BaseFooter } from './BaseFooter/BaseFooter.vue'
 export { default as BaseHeader } from './BaseHeader/BaseHeader.vue'
+export { default as MultiStepForm } from './MultiStepForm/MultiStepForm.vue'
+export { default as ToastContainer } from './ToastContainer/ToastContainer.vue'
 
 
 ═══════════════════════════════════════════════
@@ -1221,108 +1289,138 @@ describe('MultiStepForm', () => {
 
 
 ═══════════════════════════════════════════════
+📄 FILE: ./src/components/organisms/ToastContainer/ToastContainer.cy.ts
+───────────────────────────────────────────────
+// src/components/organisms/ToastContainer/ToastContainer.cy.ts
+import { mount } from '@cypress/vue'
+import ToastContainer, { addToast } from './ToastContainer.vue'
+describe('ToastContainer', () => {
+  beforeEach(() => cy.clock())
+  it('adds and auto-dismisses toasts', () => {
+    mount(ToastContainer)
+    addToast('Success!', 'success', 1000)
+    cy.tick(0)
+    cy.get('[data-cy="toast"]')
+      .should('have.length', 1)
+      .and('contain.text', 'Success!')
+      .and('have.class', 'bg-success-light')
+      .and('have.class', 'text-success-dark')
+    cy.tick(1000)
+    cy.get('[data-cy="toast"]').should('not.exist')
+  })
+})
+
+
+═══════════════════════════════════════════════
 📄 FILE: ./src/composables/useAuth.ts
 ───────────────────────────────────────────────
+// src/composables/useAuth.ts
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { auth } from '@/firebase/firebaseConfig'
 import {
   login as loginService,
-  logout as logoutService,
   register as registerService,
-  // loginWithGoogle is not directly used from authServices here,
-  // as the original useAuth.js called the Firebase SDK directly for it.
+  logout as logoutService,
 } from '@/services/authServices'
-import type { User, UserCredential } from 'firebase/auth'
-import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth' // Import necessary functions/providers for Google Login
 import type { FirebaseError } from 'firebase/app'
+import { addToast } from './useToast'
 
-// Define the shape of the user data returned by login functions
-interface AuthUser {
-  userName: string | null
-  email: string | null
+const firebaseMessages: Record<string, string> = {
+  'auth/email-already-in-use': 'This email is already registered.',
+  'auth/wrong-password': 'Incorrect password. Please try again.',
+  'auth/user-not-found': 'No account found with that email.',
+  // …etc
 }
 
-export const useAuth = () => {
-  // General login function for email/password
-  const login = async (email: string, password: string): Promise<AuthUser> => {
+export function useAuth() {
+  const router = useRouter()
+  const loading = ref(false)
+
+  async function login(email: string, password: string) {
+    loading.value = true
     try {
-      // loginService is typed to return UserCredential in authServices.ts [cite: 56, 57]
-      const userCredential: UserCredential = await loginService(
-        auth,
-        email,
-        password,
-      )
-      const user: User = userCredential.user
-      console.log('User logged in:', {
-        userName: user.displayName,
-        email: user.email,
-      })
-      // Return the defined AuthUser shape
-      return { userName: user.displayName, email: user.email }
-    } catch (error: unknown) {
-      // Use type assertion for better error handling
-      const firebaseError = error as FirebaseError
-      console.error('Login failed:', firebaseError.message)
-      throw firebaseError // Re-throw the original typed error
+      await loginService(auth, email, password)
+      addToast('Welcome back!', 'success')
+      return router.push({ name: 'Dashboard' })
+    } catch (err: unknown) {
+      const e = err as FirebaseError
+      const msg = firebaseMessages[e.code] || 'Login failed. Please try again.'
+      addToast(msg, 'error')
+      throw e
+    } finally {
+      loading.value = false
     }
   }
 
-  // Specific login function using signInWithPopup for Google
-  const loginWithGoogle = async (): Promise<AuthUser> => {
-    const provider = new GoogleAuthProvider() // Standard way to instantiate Google Provider
+  async function register(email: string, password: string) {
+    loading.value = true
     try {
-      // Use the actual signInWithPopup function from Firebase Auth SDK
-      const userCredential: UserCredential = await signInWithPopup(
-        auth,
-        provider,
-      )
-      const user: User = userCredential.user
-      console.log('User logged in with Google:', {
-        userName: user.displayName,
-        email: user.email,
-      })
-      // Return the defined AuthUser shape
-      return { userName: user.displayName, email: user.email }
-    } catch (error: unknown) {
-      const firebaseError = error as FirebaseError
-      console.error('Google login failed:', firebaseError.message)
-      throw firebaseError // Re-throw the original typed error
+      await registerService(auth, email, password)
+      addToast('Registration successful!', 'success')
+      return router.push({ name: 'Dashboard' })
+    } catch (err: unknown) {
+      const e = err as FirebaseError
+      const msg =
+        firebaseMessages[e.code] || 'Registration failed. Please try again.'
+      addToast(msg, 'error')
+      throw e
+    } finally {
+      loading.value = false
     }
   }
 
-  // Register function
-  const register = async (email: string, password: string): Promise<User> => {
+  async function logout() {
+    loading.value = true
     try {
-      // registerService is typed to return UserCredential in authServices.ts [cite: 58, 59]
-      const userCredential: UserCredential = await registerService(
-        auth,
-        email,
-        password,
-      )
-      console.log('User registered:', userCredential.user.email)
-      return userCredential.user // Return the User object as before
-    } catch (error: unknown) {
-      // Error handling logic from authServices.ts already provides a useful message [cite: 60]
-      // Log the message here, but re-throw the original error for consistency
-      console.error('Registration failed:', (error as Error).message)
-      throw error
-    }
-  }
-
-  // Logout function
-  const logout = async (): Promise<void> => {
-    try {
-      // logoutService is typed in authServices.ts [cite: 57]
       await logoutService(auth)
-      console.log('User logged out')
-    } catch (error: unknown) {
-      const firebaseError = error as FirebaseError
-      console.error('Logout failed:', firebaseError.message)
-      throw firebaseError // Re-throw the original typed error
+      addToast('You have been logged out.', 'info')
+      return router.push({ name: 'Home' })
+    } catch (err: unknown) {
+      addToast('Logout failed. Please try again.', 'error')
+      throw err
+    } finally {
+      loading.value = false
     }
   }
 
-  // Return the typed functions
-  return { login, loginWithGoogle, register, logout }
+  return { login, register, logout, loading }
+}
+
+
+═══════════════════════════════════════════════
+📄 FILE: ./src/composables/useToast.ts
+───────────────────────────────────────────────
+// src/composables/useToast.ts
+import { ref } from 'vue'
+
+export type Variant = 'info' | 'success' | 'warning' | 'error'
+
+export interface ToastItem {
+  id: number
+  message: string
+  variant: Variant
+}
+
+const toasts = ref<ToastItem[]>([])
+let nextId = 1
+
+export function addToast(
+  message: string,
+  variant: Variant = 'info',
+  duration = 3000,
+) {
+  const id = nextId++
+  toasts.value.push({ id, message, variant })
+  setTimeout(() => removeToast(id), duration)
+}
+
+export function removeToast(id: number) {
+  toasts.value = toasts.value.filter((t) => t.id !== id)
+}
+
+export function useToast() {
+  return { toasts, addToast, removeToast }
 }
 
 
@@ -1377,15 +1475,16 @@ export { auth, db }
 
 
 ═══════════════════════════════════════════════
-📄 FILE: ./src/hooks/index.ts
+📄 FILE: ./src/hooks/useAuth.ts
 ───────────────────────────────────────────────
 // src/hooks/useAuth.ts
 import { useRouter } from 'vue-router'
 import { auth } from '@/firebase/firebaseConfig'
 import {
   login as loginService,
-  logout as logoutService,
+  loginWithGoogle as googleService,
   register as registerService,
+  logout as logoutService,
 } from '@/services/authServices'
 import type { FirebaseError } from 'firebase/app'
 
@@ -1393,27 +1492,37 @@ export const useAuth = () => {
   const router = useRouter()
 
   const login = async (email: string, password: string) => {
-    // …your existing login logic
+    try {
+      await loginService(auth, email, password)
+      router.push({ name: 'Dashboard' }) // redirect after login
+    } catch (err: unknown) {
+      const e = err as FirebaseError
+      throw new Error(e.message) // bubble up
+    }
   }
 
   const loginWithGoogle = async () => {
-    // …your existing Google logic
+    try {
+      await googleService(auth)
+      router.push({ name: 'Dashboard' })
+    } catch (err: unknown) {
+      const e = err as FirebaseError
+      throw new Error(e.message)
+    }
   }
 
   const register = async (email: string, password: string) => {
-    // …your existing register logic
+    await registerService(auth, email, password)
+    router.push({ name: 'Dashboard' })
   }
 
-  const logout = async (): Promise<void> => {
+  const logout = async () => {
     try {
       await logoutService(auth)
-      console.log('User logged out')
-      // now this works, because router was created inside setup
       router.push({ name: 'Home' })
-    } catch (error: unknown) {
-      const firebaseError = error as FirebaseError
-      console.error('Logout failed:', firebaseError.message)
-      throw firebaseError
+    } catch (err: unknown) {
+      const e = err as FirebaseError
+      throw new Error(e.message)
     }
   }
 
@@ -1495,7 +1604,7 @@ const router = createRouter({
 })
 
 // --- Navigation Guard ---
-router.beforeEach(async (to, from, next) => {
+router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   const requiresAuth = to.matched.some((record) => record.meta?.requiresAuth)
 
@@ -1721,9 +1830,9 @@ import {
 } from 'firebase/auth'
 import type { FirebaseError } from 'firebase/app'
 
-/* ------------------------------------------------------------------ */
-/*  login                                                             */
-/* ------------------------------------------------------------------ */
+/* ------------------------------ */
+/*           login              */
+/* ------------------------------ */
 export const login = async (
   auth: Auth,
   email: string,
@@ -1827,19 +1936,11 @@ import { ref, computed } from 'vue'
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const initialized = ref(false)
-
-  // Listener for auth state changes
-  onAuthStateChanged(auth, (firebaseUser) => {
-    user.value = firebaseUser
+  onAuthStateChanged(auth, (u) => {
+    user.value = u
     initialized.value = true
-    console.log(
-      '[AuthStore] Auth state changed:',
-      firebaseUser?.email || 'Logged Out',
-    )
   })
-
   const isAuthenticated = computed(() => !!user.value)
-
   return { user, isAuthenticated, initialized }
 })
 
